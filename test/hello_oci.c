@@ -11,8 +11,8 @@ int main()
     OCISession  *myusrhp;
     OCISvcCtx   *mysvchp;
 
-    char[] username = "hr";
-    char[] password = "hr";
+    char *username = "hr";
+    char *password = "hr";
 
     //initialize enviroment -- mode: threaded|object
     (void) OCIEnvCreate( &myenvhp, OCI_THREADED|OCI_OBJECT, (void *)0, 
