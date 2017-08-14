@@ -1,6 +1,6 @@
 all: hello_oci
 
-hello_oci: syduldr.c 
+syduldr: syduldr.c 
 	gcc -m64 -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 \
 	-I${ORACLE_HOME}/rdbms/public \
 	-I${ORACLE_HOME}/rdbms/demo \
