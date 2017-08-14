@@ -24,7 +24,7 @@ int main()
     (void) OCIHandleAlloc( (void *)myenvhp, (void **)mysrvhp, 
         OCI_HTYPE_ERROR, 0, (void **)0 );
     //create a server context
-    (void) OCISeverAttach( mysrvhp, myerrhp, (text *)"inst1_alias",
+    (void) OCIServerAttach( mysrvhp, myerrhp, (text *)"inst1_alias",
         strlen ("inst1_alias"), OCI_DEFAULT);
     //allocate a service handle
     (void) OCIHandleAlloc( (void *)myenvhp, (void **)&mysvchp,
