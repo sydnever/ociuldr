@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include <oci.h>
-
+#include <oratypes.h>
 
 int main()
 {
