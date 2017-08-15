@@ -32,7 +32,7 @@ typedef orasb8 sb8;
 
 typedef unsigned char oratext;
 
-typedef oratext text;
+typedef oratext text
 typedef oratext OraText;
 
 typedef OraText *string; 
@@ -625,19 +625,24 @@ void session_init()
 {
     text tempbuf[1024];
 
-    sql_prepare(p_stmt, "ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'");
+    sql_prepare(p_stmt,
+                "ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'");
     sql_execute(p_svc, p_stmt, 1);
 
-    sql_prepare(p_stmt, "ALTER SESSION SET NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SSXFF'");
+    sql_prepare(p_stmt,
+                "ALTER SESSION SET NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SSXFF'");
     sql_execute(p_svc, p_stmt, 1);
 
-    sql_prepare(p_stmt, "ALTER SESSION SET NLS_TIMESTAMP_TZ_FORMAT='YYYY-MM-DD HH24:MI:SSXFF TZH:TZM'");
+    sql_prepare(p_stmt,
+                "ALTER SESSION SET NLS_TIMESTAMP_TZ_FORMAT='YYYY-MM-DD HH24:MI:SSXFF TZH:TZM'");
     sql_execute(p_svc, p_stmt, 1);
 
     if (param->bsize)
     {
         memset(tempbuf, 0, 1024);
-        sprintf(tempbuf, "ALTER SESSION SET DB_FILE_MULTIBLOCK_READ_COUNT=%d", param->bsize);
+        sprintf(tempbuf,
+                "ALTER SESSION SET DB_FILE_MULTIBLOCK_READ_COUNT=%d",
+                param->bsize);
         sql_prepare(p_stmt, tempbuf);
         sql_execute(p_svc, p_stmt, 1);
     }
@@ -645,7 +650,9 @@ void session_init()
     if (param->hsize)
     {
         memset(tempbuf, 0, 1024);
-        sprintf(tempbuf, "ALTER SESSION SET HASH_AREA_SIZE=%d", param->hsize * 1048576);
+        sprintf(tempbuf,
+                "ALTER SESSION SET HASH_AREA_SIZE=%d",
+                param->hsize * 1048576);
         sql_prepare(p_stmt, tempbuf);
         sql_execute(p_svc, p_stmt, 1);
     }
@@ -653,16 +660,21 @@ void session_init()
     if (param->ssize)
     {
         memset(tempbuf, 0, 1024);
-        sprintf(tempbuf, "ALTER SESSION SET SORT_AREA_SIZE=%d", param->ssize * 1048576);
+        sprintf(tempbuf,
+                "ALTER SESSION SET SORT_AREA_SIZE=%d",
+                param->ssize * 1048576);
         sql_prepare(p_stmt, tempbuf);
         sql_execute(p_svc, p_stmt, 1);
 
         memset(tempbuf, 0, 1024);
-        sprintf(tempbuf, "ALTER SESSION SET SORT_AREA_RETAINED_SIZE=%d", param->ssize * 1048576);
+        sprintf(tempbuf,
+                "ALTER SESSION SET SORT_AREA_RETAINED_SIZE=%d",
+                param->ssize * 1048576);
         sql_prepare(p_stmt, tempbuf);
         sql_execute(p_svc, p_stmt, 1);
 
-        sql_prepare(p_stmt, "ALTER SESSION SET \"_sort_multiblock_read_count\"=128");
+        sql_prepare(p_stmt,
+                    "ALTER SESSION SET \"_sort_multiblock_read_count\"=128");
         sql_execute(p_svc, p_stmt, 1);
     }
 
@@ -677,7 +689,8 @@ void session_init()
     if (param->trace)
     {
         memset(tempbuf, 0, 1024);
-        sprintf(tempbuf, "ALTER SESSION SET EVENTS='10046 TRACE NAME CONTEXT FOREVER,LEVEL %d'", param->trace);
+        sprintf(tempbuf,
+                "ALTER SESSION SET EVENTS='10046 TRACE NAME CONTEXT FOREVER,LEVEL %d'", param->trace);
         sql_prepare(p_stmt, tempbuf);
         sql_execute(p_svc, p_stmt, 1);
     }
@@ -1534,9 +1547,9 @@ int get_param(int argc, char **argv)
     sword i, j;
 
     param = (struct PARAM *)malloc(sizeof(struct PARAM));
-    memset(param, 0, sizeof(param));
+    memset(param, 0, sizeof(struct PARAM));
 
-    memcpy(param->fname, "uldrdata.txt", 12);
+    memcpy(param->fname, "syduldrdata.txt", 12);
     memcpy(param->tabmode, "INSERT", 6);
     memcpy(param->field, ",", 1);
     memcpy(param->record, "\n", 1);
@@ -1548,6 +1561,13 @@ int get_param(int argc, char **argv)
     param->asize = 50;
     param->lsize = 8192;
 
+    /*
+    The strcasecmp() function compares the two strings s1 and s2, 
+    ignoring the case of the characters. 
+    若参数s1和s2字符串相同，则返回0；
+    若s1大于s2，则返回大于0的值；
+    若s1小于s2，则返回小于0的值。
+    */
     for (i = 0; i < argc; i++)
     {
         if (STRNCASECMP("user=", argv[i], 5) == 0)
@@ -1561,22 +1581,23 @@ int get_param(int argc, char **argv)
             memcpy(param->query,
                    argv[i] + 6,
                    MIN(strlen(argv[i]) - 6, 1023));
+            //sql has been copied from argv to param->query
             p_tmp = param->query;
-            for (j = 0; j < strlen(param->query); j++)
-            {
-                if (param->query[j] == ' ')
-                    p_tmp++;
-            }
-
-            if (STRNCASECMP("select", p_tmp, 6))
-            {
-                memset(temptable, 0, 1024);
-                memcpy(temptable, p_tmp, strlen(p_tmp));
-                memset(param->query, 0, 1024);
-                // maybe bug here
-                memcpy(param->query, "select * from ", 14);
-                strncat(param->query, temptable, strlen(temptable));
-            }
+            // for (j = 0; j < strlen(param->query); j++)
+            // {
+            //     if (param->query[j] == ' ')
+            //         p_tmp++;
+            // }
+            printf("Log: p_tmp---%s\n", p_tmp);
+            // if (STRNCASECMP("select", p_tmp, 6))
+            // {
+            //     memset(temptable, 0, 1024);
+            //     memcpy(temptable, p_tmp, strlen(p_tmp));
+            //     memset(param->query, 0, 1024);
+            //     // maybe bug here
+            //     memcpy(param->query, "select * from ", 14);
+            //     strncat(param->query, temptable, strlen(temptable));
+            // }
         }
         else if (STRNCASECMP("file=", argv[i], 5) == 0)
         {
