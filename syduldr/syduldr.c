@@ -78,8 +78,8 @@ typedef void (*lgenfp_t)( void )
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 
 /* constants */
-#define MAJOR_VERSION_NUMBER 2
-#define MINOR_VERSION_NUMBER 21
+#define MAJOR_VERSION_NUMBER 0
+#define MINOR_VERSION_NUMBER 1
 #define MAX_SELECT_LIST_SIZE 1024
 #define MAX_COLNAME_BUFFER_SIZE 32
 #define MAX_CLOB_SIZE 65534
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
     // initialize enviroment
     env_init();
 
-    // check log on 
+    // check log on
     if (db_logon(p_user, p_pass, p_host) == 1)
     {
         return_code = ERROR_LOGON;
@@ -258,30 +258,48 @@ int main(int argc, char *argv[])
 /* ----------------------------------------------------------------- */
 void env_init()
 {
-    OCIEnvCreate((OCIEnv **)&p_env, OCI_THREADED | OCI_OBJECT, (dvoid *)0,
+    OCIEnvCreate((OCIEnv **)&p_env,
+                 OCI_THREADED | OCI_OBJECT,
+                 (dvoid *)0,
                  (dvoid * (*)(dvoid *, size_t))0,
                  (dvoid * (*)(dvoid *, dvoid *, size_t))0,
                  (void (*)(dvoid *, dvoid *))0,
                  (size_t)0, (dvoid **)0);
 
     /* error handle */
-    OCIHandleAlloc((dvoid *)p_env, (dvoid **)&p_err, OCI_HTYPE_ERROR,
-                   (size_t)0, (dvoid **)0);
+    OCIHandleAlloc((dvoid *)p_env,
+                   (dvoid **)&p_err,
+                   OCI_HTYPE_ERROR,
+                   (size_t)0,
+                   (dvoid **)0);
 
     /* server handle */
-    OCIHandleAlloc((dvoid *)p_env, (dvoid **)&p_srv, OCI_HTYPE_SERVER,
-                   (size_t)0, (dvoid **)0);
+    OCIHandleAlloc((dvoid *)p_env,
+                   (dvoid **)&p_srv,
+                   OCI_HTYPE_SERVER,
+                   (size_t)0,
+                   (dvoid **)0);
     /* svcctx handle*/
-    OCIHandleAlloc((dvoid *)p_env, (dvoid **)&p_svc, OCI_HTYPE_SVCCTX,
-                   (size_t)0, (dvoid **)0);
+    OCIHandleAlloc((dvoid *)p_env,
+                   (dvoid **)&p_svc,
+                   OCI_HTYPE_SVCCTX,
+                   (size_t)0,
+                   (dvoid **)0);
 
     /* set attribute server context in the service context */
-    OCIAttrSet((dvoid *)p_svc, OCI_HTYPE_SVCCTX, (dvoid *)p_srv,
-               (ub4)0, OCI_ATTR_SERVER, (OCIError *)p_err);
+    OCIAttrSet((dvoid *)p_svc,
+               OCI_HTYPE_SVCCTX,
+               (dvoid *)p_srv,
+               (ub4)0,
+               OCI_ATTR_SERVER,
+               (OCIError *)p_err);
 
     /*stmt handle*/
-    OCIHandleAlloc((dvoid *)p_env, (dvoid **)&p_stmt, OCI_HTYPE_STMT,
-                   (size_t)0, (dvoid **)0);
+    OCIHandleAlloc((dvoid *)p_env,
+                   (dvoid **)&p_stmt,
+                   OCI_HTYPE_STMT,
+                   (size_t)0,
+                   (dvoid **)0);
 }
 
 /* ----------------------------------------------------------------- */
@@ -291,27 +309,51 @@ sword db_logon(char *v_user, char *v_pass, char *v_host)
 {
     sword rc;
 
-    OCIHandleAlloc((dvoid *)p_env, (dvoid **)&p_sess,
-                   (ub4)OCI_HTYPE_SESSION, (size_t)0, (dvoid **)0);
+    // allocate session handle
+    OCIHandleAlloc((dvoid *)p_env,
+                   (dvoid **)&p_sess,
+                   (ub4)OCI_HTYPE_SESSION,
+                   (size_t)0,
+                   (dvoid **)0);
 
     if (strlen(v_host) == 0)
     {
-        check_err(p_err, OCIServerAttach(p_srv, p_err, (text *)0, (sb4)0, OCI_DEFAULT));
+        check_err(p_err,
+                  OCIServerAttach(p_srv, p_err,
+                                  (text *)0,
+                                  (sb4)0,
+                                  OCI_DEFAULT));
     }
     else
     {
-        check_err(p_err, OCIServerAttach(p_srv, p_err, (text *)v_host, (sb4)strlen("v_host"), OCI_DEFAULT));
+        check_err(p_err,
+                  OCIServerAttach(p_srv,
+                                  p_err,
+                                  (text *)v_host,
+                                  (sb4)strlen("v_host"),
+                                  OCI_DEFAULT));
     }
 
-    OCIAttrSet((dvoid *)p_sess, (ub4)OCI_HTYPE_SESSION,
-               (dvoid *)v_user, (ub4)strlen((char *)v_user),
-               OCI_ATTR_USERNAME, p_err);
+    //set user/password
+    OCIAttrSet((dvoid *)p_sess,
+               (ub4)OCI_HTYPE_SESSION,
+               (dvoid *)v_user,
+               (ub4)strlen((char *)v_user),
+               OCI_ATTR_USERNAME,
+               p_err);
+    OCIAttrSet((dvoid *)p_sess,
+               (ub4)OCI_HTYPE_SESSION,
+               (dvoid *)v_pass,
+               (ub4)strlen((char *)v_pass),
+               OCI_ATTR_PASSWORD,
+               p_err);
 
-    OCIAttrSet((dvoid *)p_sess, (ub4)OCI_HTYPE_SESSION,
-               (dvoid *)v_pass, (ub4)strlen((char *)v_pass),
-               OCI_ATTR_PASSWORD, p_err);
-
-    rc = OCISessionBegin(p_svc, p_err, p_sess, OCI_CRED_RDBMS, OCI_DEFAULT);
+    // session begin
+    rc = OCISessionBegin(p_svc,
+                         p_err,
+                         p_sess,
+                         OCI_CRED_RDBMS,
+                         OCI_DEFAULT);
 
     if (rc)
     {
@@ -319,9 +361,12 @@ sword db_logon(char *v_user, char *v_pass, char *v_host)
         return 1;
     }
 
-    OCIAttrSet((dvoid *)p_svc, (ub4)OCI_HTYPE_SVCCTX,
-               (dvoid *)p_sess, (ub4)0,
-               (ub4)OCI_ATTR_SESSION, p_err);
+    OCIAttrSet((dvoid *)p_svc,
+               (ub4)OCI_HTYPE_SVCCTX,
+               (dvoid *)p_sess,
+               (ub4)0,
+               (ub4)OCI_ATTR_SESSION,
+               p_err);
 
     if (v_user)
         free(v_user);
@@ -340,7 +385,8 @@ void db_logout()
 {
     if (param->trace)
     {
-        sql_prepare(p_stmt, "ALTER SESSION SET EVENTS='10046 TRACE NAME CONTEXT OFF'");
+        sql_prepare(p_stmt,
+                    "ALTER SESSION SET EVENTS='10046 TRACE NAME CONTEXT OFF'");
         sql_execute(p_svc, p_stmt, 1);
     }
 
@@ -392,8 +438,13 @@ void check_err(OCIError *p_err, sword status)
         break;
     case OCI_SUCCESS_WITH_INFO:
         (void)printf("Error - OCI_SUCCESS_WITH_INFO\n");
-        (void)OCIErrorGet((dvoid *)p_err, (ub4)1, (text *)NULL, &errcode,
-                          errbuf, (ub4)sizeof(errbuf), OCI_HTYPE_ERROR);
+        (void)OCIErrorGet((dvoid *)p_err,
+                          (ub4)1,
+                          (text *)NULL,
+                          &errcode,
+                          errbuf,
+                          (ub4)sizeof(errbuf),
+                          OCI_HTYPE_ERROR);
         (void)printf("        %.*s\n", 512, errbuf);
         break;
     case OCI_NEED_DATA:
@@ -403,8 +454,13 @@ void check_err(OCIError *p_err, sword status)
         (void)printf("Error - OCI_NODATA\n");
         break;
     case OCI_ERROR:
-        (void)OCIErrorGet((dvoid *)p_err, (ub4)1, (text *)NULL, &errcode,
-                          errbuf, (ub4)sizeof(errbuf), OCI_HTYPE_ERROR);
+        (void)OCIErrorGet((dvoid *)p_err,
+                          (ub4)1,
+                          (text *)NULL,
+                          &errcode,
+                          errbuf,
+                          (ub4)sizeof(errbuf),
+                          OCI_HTYPE_ERROR);
         (void)printf("Error - %.*s\n", 512, errbuf);
         break;
     case OCI_INVALID_HANDLE:
@@ -453,11 +509,13 @@ void decode_connstr(char *v_user, char *v_pass, char *v_host)
 void print_help()
 {
     printf("\n----------------------------------------------------------------------------\n");
-    printf("- tbuldr: Release %d.%d (ociuldr)\n", MAJOR_VERSION_NUMBER, MINOR_VERSION_NUMBER);
+    printf("- syduldr: Release %d.%d (ociuldr)\n",
+           MAJOR_VERSION_NUMBER,
+           MINOR_VERSION_NUMBER);
     printf("- First issued by Lou Fangxin (@) Copyright 2004/2008, all rights reserved.\n");
-    printf("- Modified by Ning Haiyuan (http://www.NinGoo.net).\n");
+    printf("- Modified by Syd [https://github.com/sydnever].\n");
     printf("----------------------------------------------------------------------------\n");
-    printf(" Usage: TBULDR keyword=value [,keyword=value,...]\n");
+    printf(" Usage: SYDULDR keyword=value [,keyword=value,...]\n");
     printf(" Valid Keywords:\n");
     printf("       user     = username/password@tnsname\n");
     printf("       query    = select statement, can simply speicify a table name\n");
