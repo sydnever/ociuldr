@@ -1583,21 +1583,7 @@ int get_param(int argc, char **argv)
                    MIN(strlen(argv[i]) - 6, 1023));
             //sql has been copied from argv to param->query
             p_tmp = param->query;
-            // for (j = 0; j < strlen(param->query); j++)
-            // {
-            //     if (param->query[j] == ' ')
-            //         p_tmp++;
-            // }
             printf("Log: p_tmp---%s\n", p_tmp);
-            // if (STRNCASECMP("select", p_tmp, 6))
-            // {
-            //     memset(temptable, 0, 1024);
-            //     memcpy(temptable, p_tmp, strlen(p_tmp));
-            //     memset(param->query, 0, 1024);
-            //     // maybe bug here
-            //     memcpy(param->query, "select * from ", 14);
-            //     strncat(param->query, temptable, strlen(temptable));
-            // }
         }
         else if (STRNCASECMP("file=", argv[i], 5) == 0)
         {
