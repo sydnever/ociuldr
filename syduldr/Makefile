@@ -1,4 +1,4 @@
-all: hello_oci
+all: syduldr
 
 syduldr: syduldr.c 
 	gcc -m64 -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 \

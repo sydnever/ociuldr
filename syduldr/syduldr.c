@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        printf("Error: No user/password@host. \n");        
+        printf("Error: No user/password@host. \n");
         return_code = ERROR_OTHER;
         print_help();
     }
@@ -229,37 +229,41 @@ int main(int argc, char *argv[])
     // initialize enviroment
     env_init();
     printf("Log: Enviroment initialized. \n");
-    
+
     // check log on
     if (db_logon(p_user, p_pass, p_host) == 1)
     {
-        printf("Error: Fail to log on. \n");                
+        printf("Error: Fail to log on. \n");
         return_code = ERROR_LOGON;
         return return_code;
     }
 
     // initialize session
     session_init();
-    printf("Log: Session initialized. \n");    
+    printf("Log: Session initialized. \n");
 
     // sql prepare & execute
+    printf("Log: Query---%s\n", param->query);
     if (sql_prepare(p_stmt, param->query) == 0)
     {
-        printf("Log: Sql prepared. \n");    
+        printf("Log: Sql prepared. \n");
         if (sql_execute(p_svc, p_stmt, 0) == 0)
         {
+            printf("Log: Sql executed. \n");
             get_columns(p_stmt, &col);
+            printf("Log: Columns got. \n");
             print_row(p_svc, p_stmt, &col);
+            printf("Log: Rows printed. \n");
             free_columns(&col);
-            printf("Log: Sql executed. \n");    
+            printf("Log: Columns freed. \n");
         }
     }
 
     db_logout();
-    printf("Log: Log out. \n");    
+    printf("Log: Log out. \n");
     env_exit();
-    printf("Log: Enviroment exit. \n");    
-    
+    printf("Log: Enviroment exit. \n");
+
     return return_code;
 }
 
@@ -563,8 +567,20 @@ void print_help()
 sword sql_prepare(OCIStmt *p_stmt, text *sql_statement)
 {
     sword rc;
-    rc = OCIStmtPrepare(p_stmt, p_err, (text *)sql_statement,
-                        (ub4)strlen(sql_statement), OCI_NTV_SYNTAX, OCI_DEFAULT);
+    /*
+    sword OCIStmtPrepare(OCIStmt * stmtp,
+                         OCIError * errhp,
+                         const OraText *stmt,
+                         ub4 stmt_len,
+                         ub4 language,
+                         ub4 mode);
+    */
+    printf("Log: sql---%s\n", sql_statement);    
+    rc = OCIStmtPrepare(p_stmt,
+                        p_err,
+                        (text *)sql_statement,
+                        (ub4)strlen(sql_statement),
+                        OCI_NTV_SYNTAX, OCI_DEFAULT);
 
     if (rc != 0)
     {
@@ -582,7 +598,14 @@ sword sql_prepare(OCIStmt *p_stmt, text *sql_statement)
 sword sql_execute(OCISvcCtx *p_svc, OCIStmt *p_stmt, ub4 execount)
 {
     sword rc;
-    rc = OCIStmtExecute(p_svc, p_stmt, p_err, execount, 0, NULL, NULL, OCI_DEFAULT);
+    rc = OCIStmtExecute(p_svc,
+                        p_stmt,
+                        p_err,
+                        execount,
+                        0,
+                        NULL,
+                        NULL,
+                        OCI_DEFAULT);
 
     if (rc != 0)
     {
@@ -1323,6 +1346,7 @@ void sqlldr_ctlfile(struct COLUMN *collist, ub2 numcols)
 /* ----------------------------------------------------------------- */
 int get_param(int argc, char **argv)
 {
+    //there are some bugs.
     text tempbuf[1024];
     text temptable[1024];
     text *p_tmp;
