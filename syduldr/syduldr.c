@@ -203,6 +203,7 @@ int main(int argc, char *argv[])
     char *p_pass = malloc(32);
     char *p_host = malloc(32);
 
+    printf("\n--------------------------\n");
     // get param
     if (get_param(argc, argv))
     {
@@ -243,6 +244,11 @@ int main(int argc, char *argv[])
     printf("Log: Session initialized. \n");
 
     // sql prepare & execute
+
+    // printf("*************************************\n");
+    // printf("DEBUG:sql---select * from user_tables\n");
+    // printf("*************************************\n");
+    // if (sql_prepare(p_stmt, "select * from user_tables") == 0)
     printf("Log: Query---%s\n", param->query);
     if (sql_prepare(p_stmt, param->query) == 0)
     {
@@ -426,15 +432,12 @@ void env_exit()
         OCIHandleFree((dvoid *)p_sess, (CONST ub4)OCI_HTYPE_SESSION);
     if (p_stmt)
         OCIHandleFree((dvoid *)p_stmt, (CONST ub4)OCI_HTYPE_STMT);
-
     if (fp_ctl)
         fclose(fp_ctl);
     if (fp_log)
         fclose(fp_log);
-
     if (param)
         free(param);
-
     //  exit(return_code);
 }
 
@@ -575,7 +578,7 @@ sword sql_prepare(OCIStmt *p_stmt, text *sql_statement)
                          ub4 language,
                          ub4 mode);
     */
-    printf("Log: sql---%s\n", sql_statement);    
+    printf("Log: sql---%s\n", sql_statement);
     rc = OCIStmtPrepare(p_stmt,
                         p_err,
                         (text *)sql_statement,
@@ -698,7 +701,12 @@ sword get_columns(OCIStmt *p_stmt, struct COLUMN *collist)
         printf("\n");
 
     //get columns
-    check_err(p_err, OCIAttrGet(p_stmt, OCI_HTYPE_STMT, &numcols, 0, OCI_ATTR_PARAM_COUNT, p_err));
+    check_err(p_err, OCIAttrGet(p_stmt,
+                                OCI_HTYPE_STMT,
+                                &numcols,
+                                0,
+                                OCI_ATTR_PARAM_COUNT,
+                                p_err));
 
     /* Describe the select-list items. */
     for (col = 0; col < numcols; col++)
@@ -718,13 +726,41 @@ sword get_columns(OCIStmt *p_stmt, struct COLUMN *collist)
         memset(tempcol->fmtstr, 0, 64);
 
         /* get parameter for column col*/
-        check_err(p_err, OCIParamGet(p_stmt, OCI_HTYPE_STMT, p_err, (void **)&p_param, col + 1));
+        check_err(p_err, OCIParamGet(p_stmt,
+                                     OCI_HTYPE_STMT,
+                                     p_err,
+                                     (void **)&p_param,
+                                     col + 1));
         /* get data-type of column col */
-        check_err(p_err, OCIAttrGet(p_param, OCI_DTYPE_PARAM, &tempcol->coltype, 0, OCI_ATTR_DATA_TYPE, p_err));
-        check_err(p_err, OCIAttrGet(p_param, OCI_DTYPE_PARAM, &tempcol->colname, 0 /*&tempcol->colname_len*/, (ub4)OCI_ATTR_NAME, p_err));
-        check_err(p_err, OCIAttrGet(p_param, OCI_DTYPE_PARAM, &tempcol->colwidth, 0, OCI_ATTR_DATA_SIZE, p_err));
-        check_err(p_err, OCIAttrGet(p_param, OCI_DTYPE_PARAM, &tempcol->precision, 0, OCI_ATTR_PRECISION, p_err));
-        check_err(p_err, OCIAttrGet(p_param, OCI_DTYPE_PARAM, &tempcol->scale, 0, OCI_ATTR_SCALE, p_err));
+        check_err(p_err, OCIAttrGet(p_param,
+                                    OCI_DTYPE_PARAM,
+                                    &tempcol->coltype,
+                                    0,
+                                    OCI_ATTR_DATA_TYPE,
+                                    p_err));
+        check_err(p_err, OCIAttrGet(p_param,
+                                    OCI_DTYPE_PARAM,
+                                    &tempcol->colname,
+                                    0 /*&tempcol->colname_len*/,
+                                    (ub4)OCI_ATTR_NAME, p_err));
+        check_err(p_err, OCIAttrGet(p_param,
+                                    OCI_DTYPE_PARAM,
+                                    &tempcol->colwidth,
+                                    0,
+                                    OCI_ATTR_DATA_SIZE,
+                                    p_err));
+        check_err(p_err, OCIAttrGet(p_param,
+                                    OCI_DTYPE_PARAM,
+                                    &tempcol->precision,
+                                    0,
+                                    OCI_ATTR_PRECISION,
+                                    p_err));
+        check_err(p_err, OCIAttrGet(p_param,
+                                    OCI_DTYPE_PARAM,
+                                    &tempcol->scale,
+                                    0,
+                                    OCI_ATTR_SCALE,
+                                    p_err));
 
         nextcol->next = tempcol;
         nextcol = tempcol;
@@ -791,20 +827,39 @@ sword get_columns(OCIStmt *p_stmt, struct COLUMN *collist)
 
         if (param->debug)
             printf("%10d bytes allocated for column %s (%d) type %d\n",
-                   nextcol->colwidth * param->asize, nextcol->colname, nextcol->colwidth - 1, nextcol->coltype);
+                   nextcol->colwidth * param->asize,
+                   nextcol->colname,
+                   nextcol->colwidth - 1,
+                   nextcol->coltype);
 
         //define output
         if (nextcol->coltype == SQLT_BLOB || nextcol->coltype == SQLT_LBI)
         {
-            check_err(p_err, OCIDefineByPos(p_stmt, &nextcol->p_define, p_err, col + 1,
-                                            (dvoid *)nextcol->colbuf, nextcol->colwidth, SQLT_LBI, nextcol->p_indv,
-                                            (ub2 *)nextcol->col_retlen, (ub2 *)nextcol->col_retcode, OCI_DEFAULT));
+            check_err(p_err, OCIDefineByPos(p_stmt,
+                                            &nextcol->p_define,
+                                            p_err,
+                                            col + 1,
+                                            (dvoid *)nextcol->colbuf,
+                                            nextcol->colwidth,
+                                            SQLT_LBI,
+                                            nextcol->p_indv,
+                                            (ub2 *)nextcol->col_retlen,
+                                            (ub2 *)nextcol->col_retcode,
+                                            OCI_DEFAULT));
         }
         else
         {
-            check_err(p_err, OCIDefineByPos(p_stmt, &nextcol->p_define, p_err, col + 1,
-                                            (dvoid *)nextcol->colbuf, nextcol->colwidth, SQLT_STR, nextcol->p_indv,
-                                            (ub2 *)nextcol->col_retlen, (ub2 *)nextcol->col_retcode, OCI_DEFAULT));
+            check_err(p_err, OCIDefineByPos(p_stmt,
+                                            &nextcol->p_define,
+                                            p_err,
+                                            col + 1,
+                                            (dvoid *)nextcol->colbuf,
+                                            nextcol->colwidth,
+                                            SQLT_STR,
+                                            nextcol->p_indv,
+                                            (ub2 *)nextcol->col_retlen,
+                                            (ub2 *)nextcol->col_retcode,
+                                            OCI_DEFAULT));
         }
     }
 
@@ -879,7 +934,9 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
     {
         if ((fp = open_file(param->fname, tempbuf, bcount)) == NULL)
         {
-            fprintf((fp_log == NULL ? stderr : fp_log), "ERROR -- Cannot write to file : %s\n", tempbuf);
+            fprintf((fp_log == NULL ? stderr : fp_log),
+                    "ERROR -- Cannot write to file : %s\n",
+                    tempbuf);
             return_code = ERROR_OUT_FILE;
             return;
         }
@@ -900,11 +957,17 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
             {
                 fprintf((fp == NULL ? stdout : fp), "%s", cols[c]->colname);
                 if (c < colcount - 1)
-                    fwrite(param->field, param->field_len, 1, (fp == NULL ? stdout : fp));
+                    fwrite(param->field,
+                           param->field_len,
+                           1,
+                           (fp == NULL ? stdout : fp));
             }
         }
         if (!param->isFixlen)
-            fwrite(param->record, param->return_len, 1, (fp == NULL ? stdout : fp));
+            fwrite(param->record,
+                   param->return_len,
+                   1,
+                   (fp == NULL ? stdout : fp));
     }
 
     if (param->debug)
@@ -920,8 +983,12 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
             if (rc != OCI_NO_DATA)
                 check_err(p_err, rc);
 
-            check_err(p_err, OCIAttrGet((dvoid *)p_stmt, (ub4)OCI_HTYPE_STMT, (dvoid *)&tmp_rows,
-                                        (ub4 *)&tmp_rows_size, (ub4)OCI_ATTR_ROWS_FETCHED, p_err));
+            check_err(p_err, OCIAttrGet((dvoid *)p_stmt,
+                                        (ub4)OCI_HTYPE_STMT,
+                                        (dvoid *)&tmp_rows,
+                                        (ub4 *)&tmp_rows_size,
+                                        (ub4)OCI_ATTR_ROWS_FETCHED,
+                                        p_err));
             rows = tmp_rows % param->asize;
         }
 
@@ -931,40 +998,65 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
             {
                 if (param->isForm)
                 {
-                    fprintf((fp == NULL ? stdout : fp), "%-31s: ", cols[c]->colname);
+                    fprintf((fp == NULL ? stdout : fp),
+                            "%-31s: ",
+                            cols[c]->colname);
                 }
                 if (*(cols[c]->p_indv + r) >= 0)
                 {
-                    if (cols[c]->coltype == SQLT_LBI || cols[c]->coltype == SQLT_BLOB) //long binary type
+                    if (cols[c]->coltype == SQLT_LBI ||
+                        cols[c]->coltype == SQLT_BLOB) //long binary type
                     {
                         if (param->enclose_len)
-                            fwrite(param->enclose, param->enclose_len, 1, (fp == NULL ? stdout : fp));
+                            fwrite(param->enclose,
+                                   param->enclose_len,
+                                   1,
+                                   (fp == NULL ? stdout : fp));
                         for (j = 0; j < *(cols[c]->col_retlen + r); j++)
                         {
-                            fprintf((fp == NULL ? stdout : fp), "%02x", cols[c]->colbuf[r * cols[c]->colwidth + j]);
+                            fprintf((fp == NULL ? stdout : fp),
+                                    "%02x",
+                                    cols[c]->colbuf[r * cols[c]->colwidth + j]);
                         }
                         if (param->enclose_len)
-                            fwrite(param->enclose, param->enclose_len, 1, (fp == NULL ? stdout : fp));
+                            fwrite(param->enclose,
+                                   param->enclose_len,
+                                   1,
+                                   (fp == NULL ? stdout : fp));
                     }
                     else
                     {
                         if (param->isFixlen)
-                            fprintf(fp, cols[c]->fmtstr, cols[c]->colbuf + (r * cols[c]->colwidth));
+                            fprintf(fp,
+                                    cols[c]->fmtstr,
+                                    cols[c]->colbuf + (r * cols[c]->colwidth));
                         else
                         {
                             if (param->enclose_len)
-                                fwrite(param->enclose, param->enclose_len, 1, (fp == NULL ? stdout : fp));
+                                fwrite(param->enclose,
+                                       param->enclose_len,
+                                       1,
+                                       (fp == NULL ? stdout : fp));
                             /*
-              ub1 *p_tmp=cols[c]->colbuf+(r* cols[c]->colwidth);
-              while(*p_tmp)
-              {
-                if(STRNCASECMP(p_tmp,param->field,param->field_len)==0) memcpy(p_tmp," ",param->field_len);
-                p_tmp=p_tmp+param->field_len;
-              }
-*/
-                            fwrite(cols[c]->colbuf + (r * cols[c]->colwidth), *(cols[c]->col_retlen + r), 1, (fp == NULL ? stdout : fp));
+                            ub1 *p_tmp = cols[c]->colbuf + (r * cols[c]->colwidth);
+                            while (*p_tmp)
+                            {
+                                if (STRNCASECMP(p_tmp,
+                                                param->field,
+                                                param->field_len) == 0)
+                                    memcpy(p_tmp, " ", param->field_len);
+                                p_tmp = p_tmp + param->field_len;
+                            }
+                            */
+                            fwrite(cols[c]->colbuf + (r * cols[c]->colwidth),
+                                   *(cols[c]->col_retlen + r),
+                                   1,
+                                   (fp == NULL ? stdout : fp));
                             if (param->enclose_len)
-                                fwrite(param->enclose, param->enclose_len, 1, (fp == NULL ? stdout : fp));
+                                fwrite(param->enclose,
+                                       param->enclose_len,
+                                       1,
+                                       (fp == NULL ? stdout : fp));
                         }
                     }
                 }
@@ -976,19 +1068,29 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                 {
                     if (c < colcount - 1)
                         if (!param->isFixlen)
-                            fwrite(param->field, param->field_len, 1, (fp == NULL ? stdout : fp));
+                            fwrite(param->field,
+                                   param->field_len,
+                                   1,
+                                   (fp == NULL ? stdout : fp));
                 }
             }
             if (!param->isFixlen)
-                fwrite(param->record, param->return_len, 1, (fp == NULL ? stdout : fp));
+                fwrite(param->record,
+                       param->return_len,
+                       1,
+                       (fp == NULL ? stdout : fp));
             trows = trows + 1;
             if (trows % param->feedback == 0)
             {
                 print_feedback(trows);
-                if (param->batch && ((trows / param->feedback) % param->batch) == 0)
+                if (param->batch &&
+                    ((trows / param->feedback) % param->batch) == 0)
                 {
                     if (!param->isSTDOUT)
-                        fprintf((fp_log == NULL ? stderr : fp_log), "         output file %s closed at %u rows.\n", tempbuf, trows);
+                        fprintf((fp_log == NULL ? stderr : fp_log),
+                                "         output file %s closed at %u rows.\n",
+                                tempbuf,
+                                trows);
                     if (fp)
                         fclose(fp);
                     bcount++;
@@ -998,7 +1100,9 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                     {
                         if ((fp = open_file(param->fname, tempbuf, bcount)) == NULL)
                         {
-                            fprintf((fp_log == NULL ? stderr : fp_log), "ERROR -- Cannot write to file : %s\n", tempbuf);
+                            fprintf((fp_log == NULL ? stderr : fp_log),
+                                    "ERROR -- Cannot write to file : %s\n",
+                                    tempbuf);
                             return_code = ERROR_OUT_FILE;
                             return;
                         }
@@ -1010,10 +1114,16 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                         {
                             fprintf(fp, "%s", cols[c]->colname);
                             if (c < colcount - 1)
-                                fwrite(param->field, param->field_len, 1, (fp == NULL ? stdout : fp));
+                                fwrite(param->field,
+                                       param->field_len,
+                                       1,
+                                       (fp == NULL ? stdout : fp));
                         }
                         if (param->isFixlen)
-                            fwrite(param->record, param->return_len, 1, (fp == NULL ? stdout : fp));
+                            fwrite(param->record,
+                                   param->return_len,
+                                   1,
+                                   (fp == NULL ? stdout : fp));
                     }
                     trows = 0;
                 }
@@ -1032,17 +1142,26 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
     seconds = difftime(end_time, start_time);
 
     if (!param->isSTDOUT)
-        fprintf((fp_log == NULL ? stderr : fp_log), "         output file %s closed at %u rows. Elapsed time: %d min %d sec.\n",
-                tempbuf, trows, seconds / 60, seconds % 60);
+        fprintf((fp_log == NULL ? stderr : fp_log),
+                "         output file %s closed at %u rows. Elapsed time: %d min %d sec.\n",
+                tempbuf,
+                trows,
+                seconds / 60,
+                seconds % 60);
     else if (fp_log)
-        fprintf(fp_log, "         output file %s closed at %u rows. Elapsed time: %d min %d sec\n",
-                tempbuf, trows, seconds / 60, seconds % 60);
+        fprintf(fp_log,
+                "         output file %s closed at %u rows. Elapsed time: %d min %d sec\n",
+                tempbuf,
+                trows, seconds / 60,
+                seconds % 60);
     if (fp_ctl)
     {
         memset(tempbuf, 0, 128);
         sprintf(tempbuf, "%s_sqlldr.ctl", param->tabname);
         if (!param->isSTDOUT)
-            fprintf((fp_log == NULL ? stderr : fp_log), "         control file is %s\n", tempbuf);
+            fprintf((fp_log == NULL ? stderr : fp_log),
+                    "         control file is %s\n",
+                    tempbuf);
         else if (fp_log)
             fprintf(fp_log, "         control file is %s\n", tempbuf);
     }
@@ -1141,7 +1260,8 @@ void print_feedback(ub4 row)
     if (param->isSTDOUT && fp_log == NULL)
         return;
 
-    fprintf((fp_log == NULL ? stderr : fp_log), "%8u rows exported at %04d-%02d-%02d %02d:%02d:%02d\n",
+    fprintf((fp_log == NULL ? stderr : fp_log),
+            "%8u rows exported at %04d-%02d-%02d %02d:%02d:%02d\n",
             row,
             ptm->tm_year + 1900,
             ptm->tm_mon + 1,
@@ -1234,16 +1354,25 @@ void sqlldr_ctlfile(struct COLUMN *collist, ub2 numcols)
         if (fp_ctl)
         {
             fprintf(fp_ctl, "--\n");
-            fprintf(fp_ctl, "-- Generated by tbuldr\n");
+            fprintf(fp_ctl, "-- Generated by syduldr\n");
             fprintf(fp_ctl, "--\n");
+            // add time
             if (!param->header)
-                fprintf(fp_ctl, "OPTIONS(BINDSIZE=%d,READSIZE=%d,ERRORS=-1,ROWS=50000)\n", param->buffer, param->buffer);
+                fprintf(fp_ctl,
+                        "OPTIONS(BINDSIZE=%d,READSIZE=%d,ERRORS=-1,ROWS=50000)\n",
+                        param->buffer,
+                        param->buffer);
             else
-                fprintf(fp_ctl, "OPTIONS(BINDSIZE=%d,READSIZE=%d,SKIP=1,ERRORS=-1,ROWS=50000)\n", param->buffer, param->buffer);
+                fprintf(fp_ctl,
+                        "OPTIONS(BINDSIZE=%d,READSIZE=%d,SKIP=1,ERRORS=-1,ROWS=50000)\n", param->buffer,
+                        param->buffer);
             fprintf(fp_ctl, "LOAD DATA\n");
             if (param->isFixlen)
             {
-                fprintf(fp_ctl, "INFILE '%s' \"FIX %d\"\n", param->fname, row_totallen);
+                fprintf(fp_ctl,
+                        "INFILE '%s' \"FIX %d\"\n",
+                        param->fname,
+                        row_totallen);
             }
             else
             {
@@ -1252,7 +1381,10 @@ void sqlldr_ctlfile(struct COLUMN *collist, ub2 numcols)
                     fprintf(fp_ctl, "%02x", param->record[i]);
                 fprintf(fp_ctl, "'\"\n");
             }
-            fprintf(fp_ctl, "%s INTO TABLE %s\n", param->tabmode, param->tabname);
+            fprintf(fp_ctl,
+                    "%s INTO TABLE %s\n",
+                    param->tabmode,
+                    param->tabname);
             fprintf(fp_ctl, "FIELDS TERMINATED BY X'");
             for (i = 0; i < strlen(param->field); i++)
                 fprintf(fp_ctl, "%02x", param->field[i]);
@@ -1272,64 +1404,112 @@ void sqlldr_ctlfile(struct COLUMN *collist, ub2 numcols)
                 case SQLT_DATE:
                 case SQLT_DAT:
                     if (param->isFixlen)
-                        fprintf(fp_ctl, "  %s POSITION(%d:%d) DATE \"YYYY-MM-DD HH24:MI:SS\"",
-                                nextcol->colname, totallen, totallen + nextcol->colwidth - 1);
+                        fprintf(fp_ctl,
+                                "  %s POSITION(%d:%d) DATE \"YYYY-MM-DD HH24:MI:SS\"",
+                                nextcol->colname,
+                                totallen,
+                                totallen + nextcol->colwidth - 1);
                     else
-                        fprintf(fp_ctl, "  %s DATE \"YYYY-MM-DD HH24:MI:SS\"", nextcol->colname);
+                        fprintf(fp_ctl,
+                                "  %s DATE \"YYYY-MM-DD HH24:MI:SS\"",
+                                nextcol->colname);
                     break;
                 case SQLT_TIMESTAMP: /* TIMESTAMP */
                     if (param->isFixlen)
-                        fprintf(fp_ctl, "  %s POSITION(%d:%d) TIMESTAMP \"YYYY-MM-DD HH24:MI:SSXFF\"",
-                                nextcol->colname, totallen, totallen + nextcol->colwidth - 1);
+                        fprintf(fp_ctl,
+                                "  %s POSITION(%d:%d) TIMESTAMP \"YYYY-MM-DD HH24:MI:SSXFF\"",
+                                nextcol->colname,
+                                totallen,
+                                totallen + nextcol->colwidth - 1);
                     else
-                        fprintf(fp_ctl, "  %s TIMESTAMP \"YYYY-MM-DD HH24:MI:SSXFF\"", nextcol->colname);
+                        fprintf(fp_ctl,
+                                "  %s TIMESTAMP \"YYYY-MM-DD HH24:MI:SSXFF\"",
+                                nextcol->colname);
                     break;
                 case SQLT_TIMESTAMP_TZ: /* TIMESTAMP WITH TIMEZONE */
                     if (param->isFixlen)
-                        fprintf(fp_ctl, "  %s POSITION(%d:%d) TIMESTAMP WITH TIME ZONE \"YYYY-MM-DD HH24:MI:SSXFF TZH:TZM\"",
-                                nextcol->colname, totallen, totallen + nextcol->colwidth - 1);
+                        fprintf(fp_ctl,
+                                "  %s POSITION(%d:%d) TIMESTAMP WITH TIME ZONE \"YYYY-MM-DD HH24:MI:SSXFF TZH:TZM\"",
+                                nextcol->colname,
+                                totallen,
+                                totallen + nextcol->colwidth - 1);
                     else
-                        fprintf(fp_ctl, "  %s TIMESTAMP WITH TIME ZONE \"YYYY-MM-DD HH24:MI:SSXFF TZH:TZM\"", nextcol->colname);
+                        fprintf(fp_ctl,
+                                "  %s TIMESTAMP WITH TIME ZONE \"YYYY-MM-DD HH24:MI:SSXFF TZH:TZM\"",
+                                nextcol->colname);
                     break;
                 case SQLT_LBI: /* LONG RAW */
                 case SQLT_BLOB:
                     if (param->isFixlen)
                         fprintf(fp_ctl, " %s POSITION(%d:%d) CHAR(%d) ",
-                                nextcol->colname, totallen, totallen + nextcol->colwidth - 1, 2 * nextcol->colwidth);
+                                nextcol->colname,
+                                totallen,
+                                totallen + nextcol->colwidth - 1,
+                                2 * nextcol->colwidth);
                     else
-                        fprintf(fp_ctl, "  %s CHAR(%d) ", nextcol->colname, 2 * nextcol->colwidth);
+                        fprintf(fp_ctl,
+                                "  %s CHAR(%d) ",
+                                nextcol->colname,
+                                2 * nextcol->colwidth);
                     break;
                 case SQLT_CLOB:
                     if (param->isFixlen)
-                        fprintf(fp_ctl, " %s POSITION(%d:%d) CHAR(%d) ",
-                                nextcol->colname, totallen, totallen + nextcol->colwidth - 1);
+                        fprintf(fp_ctl,
+                                " %s POSITION(%d:%d) CHAR(%d) ",
+                                nextcol->colname,
+                                totallen,
+                                totallen + nextcol->colwidth - 1,
+                                nextcol->colwidth /* maybe */);
                     else
-                        fprintf(fp_ctl, "  %s CHAR(%d) ", nextcol->colname, nextcol->colwidth);
+                        fprintf(fp_ctl, "  %s CHAR(%d) ",
+                                nextcol->colname,
+                                nextcol->colwidth);
                     break;
                 case SQLT_RDD:
                     if (param->isFixlen)
-                        fprintf(fp_ctl, "  %s POSITION(%d:%d) CHAR(%d)",
-                                nextcol->colname, totallen, totallen + nextcol->colwidth - 1, nextcol->colwidth);
+                        fprintf(fp_ctl,
+                                "  %s POSITION(%d:%d) CHAR(%d)",
+                                nextcol->colname,
+                                totallen,
+                                totallen + nextcol->colwidth - 1,
+                                nextcol->colwidth);
                     else
-                        fprintf(fp_ctl, "  %s CHAR(%d)", nextcol->colname, nextcol->colwidth);
+                        fprintf(fp_ctl,
+                                "  %s CHAR(%d)",
+                                nextcol->colname,
+                                nextcol->colwidth);
                     break;
                 case SQLT_INT:
                 case SQLT_NUM:
                     if (param->isFixlen)
-                        fprintf(fp_ctl, "  %s POSITION(%d:%d) CHAR(%d)",
-                                nextcol->colname, totallen, totallen + nextcol->colwidth - 1, nextcol->colwidth);
+                        fprintf(fp_ctl,
+                                "  %s POSITION(%d:%d) CHAR(%d)",
+                                nextcol->colname,
+                                totallen,
+                                totallen + nextcol->colwidth - 1,
+                                nextcol->colwidth);
                     else
                         fprintf(fp_ctl, "  %s CHAR", nextcol->colname);
                     break;
                 case SQLT_FILE: /* BFILE */
-                    fprintf(fp_ctl, "  %s CHAR(%d)", nextcol->colname, param->lsize);
+                    fprintf(fp_ctl,
+                            "  %s CHAR(%d)",
+                            nextcol->colname,
+                            param->lsize);
                     break;
                 default:
                     if (param->isFixlen)
-                        fprintf(fp_ctl, "  %s POSITION(%d:%d) CHAR(%d)", nextcol->colname,
-                                totallen, totallen + nextcol->colwidth - 1, nextcol->colwidth);
+                        fprintf(fp_ctl,
+                                "  %s POSITION(%d:%d) CHAR(%d)",
+                                nextcol->colname,
+                                totallen,
+                                totallen + nextcol->colwidth - 1,
+                                nextcol->colwidth);
                     else
-                        fprintf(fp_ctl, "  %s CHAR(%d)", nextcol->colname, nextcol->colwidth);
+                        fprintf(fp_ctl,
+                                "  %s CHAR(%d)",
+                                nextcol->colname,
+                                nextcol->colwidth);
                     break;
                 }
                 totallen = totallen + nextcol->colwidth;
@@ -1372,11 +1552,15 @@ int get_param(int argc, char **argv)
     {
         if (STRNCASECMP("user=", argv[i], 5) == 0)
         {
-            memcpy(param->connstr, (text *)argv[i] + 5, MIN(strlen(argv[i]) - 5, 127));
+            memcpy(param->connstr,
+                   (text *)argv[i] + 5,
+                   MIN(strlen(argv[i]) - 5, 127));
         }
         else if (STRNCASECMP("query=", argv[i], 6) == 0)
         {
-            memcpy(param->query, argv[i] + 6, MIN(strlen(argv[i]) - 6, 1023));
+            memcpy(param->query,
+                   argv[i] + 6,
+                   MIN(strlen(argv[i]) - 6, 1023));
             p_tmp = param->query;
             for (j = 0; j < strlen(param->query); j++)
             {
@@ -1389,6 +1573,7 @@ int get_param(int argc, char **argv)
                 memset(temptable, 0, 1024);
                 memcpy(temptable, p_tmp, strlen(p_tmp));
                 memset(param->query, 0, 1024);
+                // maybe bug here
                 memcpy(param->query, "select * from ", 14);
                 strncat(param->query, temptable, strlen(temptable));
             }
@@ -1405,17 +1590,23 @@ int get_param(int argc, char **argv)
         else if (STRNCASECMP("field=", argv[i], 6) == 0)
         {
             memset(param->field, 0, 16);
-            param->field_len = convert_option(argv[i] + 6, param->field, MIN(strlen(argv[i]) - 6, 15));
+            param->field_len = convert_option(argv[i] + 6,
+                                              param->field,
+                                              MIN(strlen(argv[i]) - 6, 15));
         }
         else if (STRNCASECMP("record=", argv[i], 7) == 0)
         {
             memset(param->record, 0, 16);
-            param->return_len = convert_option(argv[i] + 7, param->record, MIN(strlen(argv[i]) - 7, 15));
+            param->return_len = convert_option(argv[i] + 7,
+                                               param->record,
+                                               MIN(strlen(argv[i]) - 7, 15));
         }
         else if (STRNCASECMP("enclose=", argv[i], 8) == 0)
         {
             memset(param->enclose, 0, 16);
-            param->enclose_len = convert_option(argv[i] + 8, param->enclose, MIN(strlen(argv[i]) - 8, 15));
+            param->enclose_len = convert_option(argv[i] + 8,
+                                                param->enclose,
+                                                MIN(strlen(argv[i]) - 8, 15));
         }
         else if (STRNCASECMP("log=", argv[i], 4) == 0)
         {
@@ -1433,7 +1624,9 @@ int get_param(int argc, char **argv)
         {
             memset(tempbuf, 0, 16);
             memcpy(tempbuf, argv[i] + 5, MIN(strlen(argv[i]) - 5, 15));
-            if (STRNCASECMP(tempbuf, "YES", 3) == 0 || STRNCASECMP(tempbuf, "ON", 3) == 0 || STRNCASECMP(tempbuf, "1", 3) == 0)
+            if (STRNCASECMP(tempbuf, "YES", 3) == 0 ||
+                STRNCASECMP(tempbuf, "ON", 3) == 0 ||
+                STRNCASECMP(tempbuf, "1", 3) == 0)
                 param->header = 1;
         }
         else if (STRNCASECMP("sort=", argv[i], 5) == 0)
@@ -1521,21 +1714,27 @@ int get_param(int argc, char **argv)
         {
             memset(tempbuf, 0, 128);
             memcpy(tempbuf, argv[i] + 5, MIN(strlen(argv[i]) - 5, 128));
-            if (STRNCASECMP(tempbuf, "YES", 3) == 0 || STRNCASECMP(tempbuf, "ON", 3) == 0 || STRNCASECMP(tempbuf, "1", 3) == 0)
+            if (STRNCASECMP(tempbuf, "YES", 3) == 0 ||
+                STRNCASECMP(tempbuf, "ON", 3) == 0 ||
+                STRNCASECMP(tempbuf, "1", 3) == 0)
                 param->isForm = 1;
         }
         else if (STRNCASECMP("fixlen=", argv[i], 7) == 0)
         {
             memset(tempbuf, 0, 128);
             memcpy(tempbuf, argv[i] + 7, MIN(strlen(argv[i]) - 7, 16));
-            if (STRNCASECMP(tempbuf, "YES", 3) == 0 || STRNCASECMP(tempbuf, "ON", 3) == 0 || STRNCASECMP(tempbuf, "1", 3) == 0)
+            if (STRNCASECMP(tempbuf, "YES", 3) == 0 ||
+                STRNCASECMP(tempbuf, "ON", 3) == 0 ||
+                STRNCASECMP(tempbuf, "1", 3) == 0)
                 param->isFixlen = 1;
         }
         else if (STRNCASECMP("debug=", argv[i], 6) == 0)
         {
             memset(tempbuf, 0, 1024);
             memcpy(tempbuf, argv[i] + 6, MIN(strlen(argv[i]) - 6, 254));
-            if (STRNCASECMP(tempbuf, "YES", 3) == 0 || STRNCASECMP(tempbuf, "ON", 3) == 0 || STRNCASECMP(tempbuf, "1", 3) == 0)
+            if (STRNCASECMP(tempbuf, "YES", 3) == 0 ||
+                STRNCASECMP(tempbuf, "ON", 3) == 0 ||
+                STRNCASECMP(tempbuf, "1", 3) == 0)
                 param->debug = 1;
         }
         else if (STRNCASECMP("-help", argv[i], 4) == 0)
@@ -1593,7 +1792,11 @@ int get_param(int argc, char **argv)
         param->header = 0;
 
     if (param->debug)
-        printf("\narray:%d field_len:%d return_len:%d enclose_len:%d\n", param->asize, param->field_len, param->return_len, param->enclose_len);
+        printf("\narray:%d field_len:%d return_len:%d enclose_len:%d\n",
+               param->asize,
+               param->field_len,
+               param->return_len,
+               param->enclose_len);
 
     return 0;
 }
