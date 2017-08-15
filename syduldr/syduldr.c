@@ -3,7 +3,8 @@
 * Author: Syd [https://github.com/sydnever]
 * Rewrite with OCI12 base on TBULDR by NinGoo [http://www.ningoo.net]
 * change history:
-* 2017-08-14 Create project.  version 0.1
+* 2017-08-14 Create project.        version 0.1
+* 2017-08-15 Kill the firt bug.     version 0.2
 */
 
 /* oratypes.h
@@ -79,7 +80,7 @@ typedef void (*lgenfp_t)( void )
 
 /* constants */
 #define MAJOR_VERSION_NUMBER 0
-#define MINOR_VERSION_NUMBER 1
+#define MINOR_VERSION_NUMBER 2
 #define MAX_SELECT_LIST_SIZE 1024
 #define MAX_COLNAME_BUFFER_SIZE 32
 #define MAX_CLOB_SIZE 65534
@@ -101,7 +102,7 @@ static OCIServer *p_srv = (OCIServer *)0;
 static OCIError *p_err = (OCIError *)0;
 static OCISvcCtx *p_svc = (OCISvcCtx *)0;
 static OCIStmt *p_stmt = (OCIStmt *)0;
-static OCIDescribe *p_desc = (OCIDescribe *)0;
+//static OCIDescribe *p_desc = (OCIDescribe *)0;
 static OCISession *p_sess = (OCISession *)0;
 
 struct COLUMN
@@ -922,7 +923,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
     struct COLUMN *cols[MAX_SELECT_LIST_SIZE];
     text tempbuf[512];
     FILE *fp = NULL;
-    FILE *fp_lob = NULL;
+    // FILE *fp_lob = NULL;
     ub1 *iobuf = NULL;
 
     time_t start_time, end_time;
@@ -1361,7 +1362,8 @@ void sqlldr_ctlfile(struct COLUMN *collist, ub2 numcols)
     if (strlen(param->tabname))
     {
         memset(ctlfname, 0, 128);
-        sprintf(ctlfname, "%s_sqlldr.ctl", param->tabname);
+        //sprintf(ctlfname, "%s_sqlldr.ctl", param->tabname);
+        sprintf(ctlfname, "sqlldr.ctl");
         fp_ctl = open_file(ctlfname, tempbuf, 0);
 
         if (fp_ctl)
@@ -1544,7 +1546,7 @@ int get_param(int argc, char **argv)
     text temptable[1024];
     text *p_tmp;
     FILE *fp_sql;
-    sword i, j;
+    sword i;
 
     param = (struct PARAM *)malloc(sizeof(struct PARAM));
     memset(param, 0, sizeof(struct PARAM));
