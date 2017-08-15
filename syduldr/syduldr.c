@@ -206,6 +206,7 @@ int main(int argc, char *argv[])
     // get param
     if (get_param(argc, argv))
     {
+        printf("Error: No params. \n");
         free(p_user);
         free(p_pass);
         free(p_host);
@@ -215,41 +216,50 @@ int main(int argc, char *argv[])
     // get user/password@host
     if (strlen(param->connstr))
     {
+        printf("Log: Get user/password@host. \n");
         decode_connstr(p_user, p_pass, p_host);
     }
     else
     {
+        printf("Error: No user/password@host. \n");        
         return_code = ERROR_OTHER;
         print_help();
     }
 
     // initialize enviroment
     env_init();
-
+    printf("Log: Enviroment initialized. \n");
+    
     // check log on
     if (db_logon(p_user, p_pass, p_host) == 1)
     {
+        printf("Error: Fail to log on. \n");                
         return_code = ERROR_LOGON;
         return return_code;
     }
 
-    // initialize enviroment
+    // initialize session
     session_init();
+    printf("Log: Session initialized. \n");    
 
     // sql prepare & execute
     if (sql_prepare(p_stmt, param->query) == 0)
     {
+        printf("Log: Sql prepared. \n");    
         if (sql_execute(p_svc, p_stmt, 0) == 0)
         {
             get_columns(p_stmt, &col);
             print_row(p_svc, p_stmt, &col);
             free_columns(&col);
+            printf("Log: Sql executed. \n");    
         }
     }
 
     db_logout();
+    printf("Log: Log out. \n");    
     env_exit();
-
+    printf("Log: Enviroment exit. \n");    
+    
     return return_code;
 }
 
