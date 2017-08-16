@@ -132,6 +132,8 @@ struct PARAM
     text field[32];
     text record[32];
     text enclose[32];
+    text escape[32];
+    text nullchar[32];
     text connstr[132];
     text fname[128];
     text sqlfname[128];
@@ -142,6 +144,8 @@ struct PARAM
     ub1 field_len;   // field length
     ub1 return_len;  // return length
     ub1 enclose_len; // enclose length
+    ub1 escape_len;
+    ub1 nullchar_len;
     ub4 buffer;      // buffer size,default 16MB
     ub2 hsize;       // hash_area_size
     ub2 ssize;       // sort_area_size
@@ -542,6 +546,8 @@ void print_help()
     printf("       field    = seperator string between fields\n");
     printf("       record   = seperator string between records\n");
     printf("       enclose  = fields enclose string\n");
+    printf("       escape   = escape character in file\n");
+    printf("       null     = NULL character in file\n");    
     printf("       file     = output file name, default: uldrdata.txt\n");
     printf("       head     = print row header(Yes|No,ON|OFF,1|0)\n");
     printf("       read     = set DB_FILE_MULTIBLOCK_READ_COUNT at session level\n");
@@ -1546,7 +1552,6 @@ int get_param(int argc, char **argv)
     //there are some bugs.
     text tempbuf[1024];
     text temptable[1024];
-    text *p_tmp;
     FILE *fp_sql;
     sword i;
 
@@ -1574,11 +1579,13 @@ int get_param(int argc, char **argv)
     */
     for (i = 0; i < argc; i++)
     {
+        // frequently used
         if (STRNCASECMP("user=", argv[i], 5) == 0)
         {
             memcpy(param->connstr,
                    (text *)argv[i] + 5,
                    MIN(strlen(argv[i]) - 5, 127));
+            printf("Param->user: %s\n", param->connstr);
         }
         else if (STRNCASECMP("query=", argv[i], 6) == 0)
         {
@@ -1586,17 +1593,18 @@ int get_param(int argc, char **argv)
                    argv[i] + 6,
                    MIN(strlen(argv[i]) - 6, 1023));
             //sql has been copied from argv to param->query
-            p_tmp = param->query;
-            printf("Log: p_tmp---%s\n", p_tmp);
+            printf("Param->query: %s\n", param->query);            
         }
         else if (STRNCASECMP("file=", argv[i], 5) == 0)
         {
             memset(param->fname, 0, 128);
             memcpy(param->fname, argv[i] + 5, MIN(strlen(argv[i]) - 5, 127));
+            printf("Param->file: %s\n", param->fname);                        
         }
         else if (STRNCASECMP("sql=", argv[i], 4) == 0)
         {
             memcpy(param->sqlfname, argv[i] + 4, MIN(strlen(argv[i]) - 4, 127));
+            printf("Param->sql: %s\n", param->sqlfname);                                    
         }
         else if (STRNCASECMP("field=", argv[i], 6) == 0)
         {
@@ -1604,6 +1612,7 @@ int get_param(int argc, char **argv)
             param->field_len = convert_option(argv[i] + 6,
                                               param->field,
                                               MIN(strlen(argv[i]) - 6, 15));
+            printf("Param->field: %s\n", param->field);                        
         }
         else if (STRNCASECMP("record=", argv[i], 7) == 0)
         {
@@ -1611,25 +1620,53 @@ int get_param(int argc, char **argv)
             param->return_len = convert_option(argv[i] + 7,
                                                param->record,
                                                MIN(strlen(argv[i]) - 7, 15));
+            printf("Param->record: %s\n", param->record);                        
         }
+
         else if (STRNCASECMP("enclose=", argv[i], 8) == 0)
-        {
+        { // there may be something wrong
             memset(param->enclose, 0, 16);
             param->enclose_len = convert_option(argv[i] + 8,
                                                 param->enclose,
                                                 MIN(strlen(argv[i]) - 8, 15));
+            printf("Param->enclose: %s\n", param->enclose);                                    
         }
+
+        // new options
+        else if (STRNCASECMP("null=", argv[i], 5) == 0)
+        {
+            memset(param->nullchar, 0, 16);
+            param->nullchar_len = convert_option(argv[i] + 5,
+                                                param->nullchar,
+                                                MIN(strlen(argv[i]) - 5, 15));
+            printf("Param->null: %s\n", param->nullchar);                                    
+        }
+        
+        else if (STRNCASECMP("escape=", argv[i], 7) == 0)
+        {
+            memset(param->escape, 0, 16);
+            param->escape_len = convert_option(argv[i] + 7,
+                                                param->escape,
+                                                MIN(strlen(argv[i]) - 7, 15));
+            printf("Param->escape: %s\n", param->escape);                                    
+        }
+
+
+        // not usually used
         else if (STRNCASECMP("log=", argv[i], 4) == 0)
         {
             memcpy(param->logfile, argv[i] + 4, MIN(strlen(argv[i]) - 4, 127));
+            printf("Param->log: %s\n", param->logfile);
         }
         else if (STRNCASECMP("table=", argv[i], 6) == 0)
         {
             memcpy(param->tabname, argv[i] + 6, MIN(strlen(argv[i]) - 6, 127));
+            printf("Param->table: %s\n", param->tabname);            
         }
         else if (STRNCASECMP("mode=", argv[i], 5) == 0)
         {
             memcpy(param->tabmode, argv[i] + 5, MIN(strlen(argv[i]) - 5, 15));
+            printf("Param->mode: %s\n", param->tabmode);
         }
         else if (STRNCASECMP("head=", argv[i], 5) == 0)
         {
@@ -1639,6 +1676,7 @@ int get_param(int argc, char **argv)
                 STRNCASECMP(tempbuf, "ON", 3) == 0 ||
                 STRNCASECMP(tempbuf, "1", 3) == 0)
                 param->header = 1;
+            printf("Param->head: %s\n", param->header);           
         }
         else if (STRNCASECMP("sort=", argv[i], 5) == 0)
         {
@@ -1646,7 +1684,7 @@ int get_param(int argc, char **argv)
             memcpy(tempbuf, argv[i] + 5, MIN(strlen(argv[i]) - 5, 254));
             param->ssize = atoi(tempbuf);
             if (param->ssize > 512)
-                param->ssize = 512;
+                param->ssize = 512;           
         }
         else if (STRNCASECMP("buffer=", argv[i], 7) == 0)
         {
