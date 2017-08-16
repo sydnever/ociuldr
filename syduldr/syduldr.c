@@ -546,8 +546,8 @@ void print_help()
     printf("       field    = seperator string between fields\n");
     printf("       record   = seperator string between records\n");
     printf("       enclose  = fields enclose string\n");
-    printf("       escape   = escape character in file\n");
-    printf("       null     = NULL character in file\n");    
+    printf("       escape   = escape character for special characters \n");
+    printf("       null     = replace null with given value \n");    
     printf("       file     = output file name, default: uldrdata.txt\n");
     printf("       head     = print row header(Yes|No,ON|OFF,1|0)\n");
     printf("       read     = set DB_FILE_MULTIBLOCK_READ_COUNT at session level\n");
@@ -942,6 +942,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
 
     start_time = time(0);
 
+    // count columns
     p = col->next;
     while (p != NULL)
     {
@@ -952,6 +953,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
 
     memset(tempbuf, 0, 512);
 
+    // check
     if (!param->isSTDOUT)
     {
         if ((fp = open_file(param->fname, tempbuf, bcount)) == NULL)
@@ -968,6 +970,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
         if (setvbuf(fp, iobuf, _IOFBF, MAX_IO_BUFFER_SIZE))
             printf("Canot setup buffer for output file!\n");
     }
+
 
     if (param->header)
     {
