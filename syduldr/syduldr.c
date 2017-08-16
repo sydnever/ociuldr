@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     char *p_pass = malloc(32);
     char *p_host = malloc(32);
 
-    printf("\n--------------------------\n");
+    printf("\n\n--------------------------\n\n");
     // get param
     if (get_param(argc, argv))
     {
@@ -214,6 +214,7 @@ int main(int argc, char *argv[])
         free(p_host);
         return return_code;
     }
+    printf("Log: Get params. \n");
 
     // get user/password@host
     if (strlen(param->connstr))
@@ -584,7 +585,8 @@ sword sql_prepare(OCIStmt *p_stmt, text *sql_statement)
                         p_err,
                         (text *)sql_statement,
                         (ub4)strlen(sql_statement),
-                        OCI_NTV_SYNTAX, OCI_DEFAULT);
+                        OCI_NTV_SYNTAX,
+                        OCI_DEFAULT);
 
     if (rc != 0)
     {
