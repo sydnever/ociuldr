@@ -8,6 +8,20 @@ ociuldr/syduldr
 
 ociuldr.c在oracle11的环境下运行时错误，tbuldr.c报了一个sql执行的错误，现在以tbuldr为基础进行修改，命名为syduldr。
 
+---
+
+### 待测试参数选项
+
+field 列间隔符
+
+enclose 将列内容封包的符号
+
+### 待增加参数选项
+
+escape 转义符（默认值\\)
+
+null NULL符（默认为转义符N） 
+
 ----
 ## 目录结构
 old：原始源码
@@ -61,3 +75,5 @@ make
            feedback = display progress every x rows, default 500000
            form     = display rows as form (Yes|No)
            fixlen   = fix length format (Yes|No)
+
+---
