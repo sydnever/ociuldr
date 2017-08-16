@@ -1176,6 +1176,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                 tempbuf,
                 trows, seconds / 60,
                 seconds % 60);
+    /*
     if (fp_ctl)
     {
         memset(tempbuf, 0, 128);
@@ -1187,6 +1188,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
         else if (fp_log)
             fprintf(fp_log, "         control file is %s\n", tempbuf);
     }
+    */
     if (!param->isSTDOUT)
         fprintf((fp_log == NULL ? stderr : fp_log), "\n");
     fflush((fp_log == NULL ? stderr : fp_log));
