@@ -948,6 +948,8 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
 
     start_time = time(0);
 
+    char temp_null[8196];
+
     // count columns
     p = col->next;
     while (p != NULL)
@@ -1050,7 +1052,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                         // output
                         for (j = 0; j < *(cols[c]->col_retlen + r); j++)
                         {
-                            // Todo: check null and escape
+                            // binary type no need to check null or escape
                             fprintf((fp == NULL ? stdout : fp),
                                     "%02x",
                                     cols[c]->colbuf[r * cols[c]->colwidth + j]);
@@ -1075,23 +1077,22 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                                        param->enclose_len,
                                        1,
                                        (fp == NULL ? stdout : fp));
-                            /*
-                            ub1 *p_tmp = cols[c]->colbuf + (r * cols[c]->colwidth);
-                            while (*p_tmp)
-                            {
-                                if (STRNCASECMP(p_tmp,
-                                                param->field,
-                                                param->field_len) == 0)
-                                    memcpy(p_tmp, " ", param->field_len);
-                                p_tmp = p_tmp + param->field_len;
-                            }
-                            */
                             // output
                             // Todo: check null and escape
+                            if (param->escape_len)
+                            {
+                                //
+                            }
+                            if (param->nullchar_len)
+                            {
+                                //
+                            }
+
                             fwrite(cols[c]->colbuf + (r * cols[c]->colwidth),
                                    *(cols[c]->col_retlen + r),
                                    1,
                                    (fp == NULL ? stdout : fp));
+
                             //
                             if (param->enclose_len)
                                 fwrite(param->enclose,
@@ -1101,6 +1102,10 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                         }
                     }
                 }
+                // null enter here directly
+                strcpy(temp_null,
+                       cols[c]->colbuf + (r * cols[c]->colwidth));
+                printf("%d\n", strlen(temp_null));
                 if (param->isForm)
                 {
                     fprintf((fp == NULL ? stdout : fp), "\n");
