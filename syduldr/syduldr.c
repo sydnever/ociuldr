@@ -1032,23 +1032,24 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
         {
             for (c = 0; c < colcount; c++)
             {
+                // enclose
+                if (param->enclose_len)
+                    fwrite(param->enclose,
+                           param->enclose_len,
+                           1,
+                           (fp == NULL ? stdout : fp));
                 if (param->isForm)
                 {
                     fprintf((fp == NULL ? stdout : fp),
                             "%-31s: ",
                             cols[c]->colname);
                 }
-
+                // output
                 if (*(cols[c]->p_indv + r) >= 0)
                 {
                     if (cols[c]->coltype == SQLT_LBI ||
                         cols[c]->coltype == SQLT_BLOB) //long binary type
                     {
-                        if (param->enclose_len)
-                            fwrite(param->enclose,
-                                   param->enclose_len,
-                                   1,
-                                   (fp == NULL ? stdout : fp));
                         // output
                         for (j = 0; j < *(cols[c]->col_retlen + r); j++)
                         {
@@ -1057,12 +1058,6 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                                     "%02x",
                                     cols[c]->colbuf[r * cols[c]->colwidth + j]);
                         }
-                        //
-                        if (param->enclose_len)
-                            fwrite(param->enclose,
-                                   param->enclose_len,
-                                   1,
-                                   (fp == NULL ? stdout : fp));
                     }
                     else
                     {
@@ -1072,18 +1067,9 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                                     cols[c]->colbuf + (r * cols[c]->colwidth));
                         else
                         {
-                            if (param->enclose_len)
-                                fwrite(param->enclose,
-                                       param->enclose_len,
-                                       1,
-                                       (fp == NULL ? stdout : fp));
                             // output
                             // Todo: check null and escape
                             if (param->escape_len)
-                            {
-                                //
-                            }
-                            if (param->nullchar_len)
                             {
                                 //
                             }
@@ -1092,20 +1078,29 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                                    *(cols[c]->col_retlen + r),
                                    1,
                                    (fp == NULL ? stdout : fp));
-
-                            //
-                            if (param->enclose_len)
-                                fwrite(param->enclose,
-                                       param->enclose_len,
-                                       1,
-                                       (fp == NULL ? stdout : fp));
                         }
                     }
                 }
                 // null enter here directly
-                strcpy(temp_null,
-                       cols[c]->colbuf + (r * cols[c]->colwidth));
-                printf("%d\n", strlen(temp_null));
+                if (param->nullchar_len)
+                {
+                    strcpy(temp_null,
+                           cols[c]->colbuf + (r * cols[c]->colwidth));
+                    if (!strlen(temp_null))
+                    {
+                        fwrite(&param->nullchar,
+                               param->nullchar_len,
+                               1,
+                               (fp == NULL ? stdout : fp));
+                    }
+                }
+                // enclose
+                if (param->enclose_len)
+                    fwrite(param->enclose,
+                           param->enclose_len,
+                           1,
+                           (fp == NULL ? stdout : fp));
+                // field
                 if (param->isForm)
                 {
                     fprintf((fp == NULL ? stdout : fp), "\n");
@@ -1584,7 +1579,7 @@ int get_param(int argc, char **argv)
     param = (struct PARAM *)malloc(sizeof(struct PARAM));
     memset(param, 0, sizeof(struct PARAM));
 
-    memcpy(param->fname, "syduldrdata.txt", 12);
+    memcpy(param->fname, "uldrdata.txt", 12);
     memcpy(param->tabmode, "INSERT", 6);
     memcpy(param->field, ",", 1);
     memcpy(param->record, "\n", 1);
