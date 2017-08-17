@@ -132,8 +132,8 @@ struct PARAM
     text field[32];
     text record[32];
     text enclose[32];
-    text escape[32];
-    text nullchar[32];
+    text escape[32];   // todo
+    text nullchar[32]; // todo
     text connstr[132];
     text fname[128];
     text sqlfname[128];
@@ -141,20 +141,20 @@ struct PARAM
     text tabname[128];
     text tabmode[16];
 
-    ub1 field_len;   // field length
-    ub1 return_len;  // return length
-    ub1 enclose_len; // enclose length
-    ub1 escape_len;
-    ub1 nullchar_len;
-    ub4 buffer;      // buffer size,default 16MB
-    ub2 hsize;       // hash_area_size
-    ub2 ssize;       // sort_area_size
-    ub2 bsize;       // db_file_multiblock_read_count
-    ub1 serial;      // _serial_direct_read
-    ub1 trace;       // 10046 trace level
-    ub2 batch;       // batch out files
-    ub1 header;      // output header line
-    ub4 feedback;    // display progress log every x rows
+    ub1 field_len;    // field length
+    ub1 return_len;   // return length
+    ub1 enclose_len;  // enclose length
+    ub1 escape_len;   // todo
+    ub1 nullchar_len; // todo
+    ub4 buffer;       // buffer size,default 16MB
+    ub2 hsize;        // hash_area_size
+    ub2 ssize;        // sort_area_size
+    ub2 bsize;        // db_file_multiblock_read_count
+    ub1 serial;       // _serial_direct_read
+    ub1 trace;        // 10046 trace level
+    ub2 batch;        // batch out files
+    ub1 header;       // output header line
+    ub4 feedback;     // display progress log every x rows
 
     ub4 asize; // array size
     ub4 lsize; // long size
@@ -201,6 +201,11 @@ int convert_option(const ub1 *src, ub1 *dst, int mlen);
 ub1 get_hexindex(char c);
 
 FILE *open_file(const text *fname, text tempbuf[], int batch);
+
+// todo
+// check escape & null
+ub1 check_escape(const ub1 ch);
+ub1 check_null(const ub1 ch);
 
 int main(int argc, char *argv[])
 {
@@ -547,7 +552,7 @@ void print_help()
     printf("       record   = seperator string between records\n");
     printf("       enclose  = fields enclose string\n");
     printf("       escape   = escape character for special characters \n");
-    printf("       null     = replace null with given value \n");    
+    printf("       null     = replace null with given value \n");
     printf("       file     = output file name, default: uldrdata.txt\n");
     printf("       head     = print row header(Yes|No,ON|OFF,1|0)\n");
     printf("       read     = set DB_FILE_MULTIBLOCK_READ_COUNT at session level\n");
@@ -733,6 +738,7 @@ sword get_columns(OCIStmt *p_stmt, struct COLUMN *collist)
     /* Describe the select-list items. */
     for (col = 0; col < numcols; col++)
     {
+        // initialize
         tempcol = (struct COLUMN *)malloc(sizeof(struct COLUMN));
         tempcol->p_indv = (sb2 *)malloc(param->asize * sizeof(sb2));
         tempcol->col_retlen = (ub2 *)malloc(param->asize * sizeof(ub2));
@@ -971,7 +977,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
             printf("Canot setup buffer for output file!\n");
     }
 
-
+    // print form head
     if (param->header)
     {
         for (c = 0; c < colcount; c++)
@@ -1003,6 +1009,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
         rows = param->asize;
         rc = OCIStmtFetch(p_stmt, p_err, param->asize, 0, OCI_DEFAULT);
 
+        // get the number of rows
         if (rc != 0)
         {
             if (rc != OCI_NO_DATA)
@@ -1017,6 +1024,8 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
             rows = tmp_rows % param->asize;
         }
 
+        // output
+        // Todo: check null and escape
         for (r = 0; r < rows; r++)
         {
             for (c = 0; c < colcount; c++)
@@ -1027,6 +1036,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                             "%-31s: ",
                             cols[c]->colname);
                 }
+
                 if (*(cols[c]->p_indv + r) >= 0)
                 {
                     if (cols[c]->coltype == SQLT_LBI ||
@@ -1037,12 +1047,15 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                                    param->enclose_len,
                                    1,
                                    (fp == NULL ? stdout : fp));
+                        // output
                         for (j = 0; j < *(cols[c]->col_retlen + r); j++)
                         {
+                            // Todo: check null and escape
                             fprintf((fp == NULL ? stdout : fp),
                                     "%02x",
                                     cols[c]->colbuf[r * cols[c]->colwidth + j]);
                         }
+                        //
                         if (param->enclose_len)
                             fwrite(param->enclose,
                                    param->enclose_len,
@@ -1073,10 +1086,13 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                                 p_tmp = p_tmp + param->field_len;
                             }
                             */
+                            // output
+                            // Todo: check null and escape
                             fwrite(cols[c]->colbuf + (r * cols[c]->colwidth),
                                    *(cols[c]->col_retlen + r),
                                    1,
                                    (fp == NULL ? stdout : fp));
+                            //
                             if (param->enclose_len)
                                 fwrite(param->enclose,
                                        param->enclose_len,
@@ -1212,11 +1228,11 @@ int convert_option(const ub1 *src, ub1 *dst, int mlen)
     len = strlen(src);
 
     /*  if(STRNCASECMP(src,"0x",2)) 
-  {
+    {
     memcpy(dst,src,MIN(mlen,len));
     return MIN(mlen,len);
-  }  
-*/
+    }  
+    */
     while (i < MIN(mlen, len))
     {
         if (*(src + i) == '0')
@@ -1598,18 +1614,18 @@ int get_param(int argc, char **argv)
                    argv[i] + 6,
                    MIN(strlen(argv[i]) - 6, 1023));
             //sql has been copied from argv to param->query
-            printf("Param->query: %s\n", param->query);            
+            printf("Param->query: %s\n", param->query);
         }
         else if (STRNCASECMP("file=", argv[i], 5) == 0)
         {
             memset(param->fname, 0, 128);
             memcpy(param->fname, argv[i] + 5, MIN(strlen(argv[i]) - 5, 127));
-            printf("Param->file: %s\n", param->fname);                        
+            printf("Param->file: %s\n", param->fname);
         }
         else if (STRNCASECMP("sql=", argv[i], 4) == 0)
         {
             memcpy(param->sqlfname, argv[i] + 4, MIN(strlen(argv[i]) - 4, 127));
-            printf("Param->sql: %s\n", param->sqlfname);                                    
+            printf("Param->sql: %s\n", param->sqlfname);
         }
         else if (STRNCASECMP("field=", argv[i], 6) == 0)
         {
@@ -1617,7 +1633,7 @@ int get_param(int argc, char **argv)
             param->field_len = convert_option(argv[i] + 6,
                                               param->field,
                                               MIN(strlen(argv[i]) - 6, 15));
-            printf("Param->field: %s\n", param->field);                        
+            printf("Param->field: %s\n", param->field);
         }
         else if (STRNCASECMP("record=", argv[i], 7) == 0)
         {
@@ -1625,7 +1641,7 @@ int get_param(int argc, char **argv)
             param->return_len = convert_option(argv[i] + 7,
                                                param->record,
                                                MIN(strlen(argv[i]) - 7, 15));
-            printf("Param->record: %s\n", param->record);                        
+            printf("Param->record: %s\n", param->record);
         }
 
         else if (STRNCASECMP("enclose=", argv[i], 8) == 0)
@@ -1634,7 +1650,7 @@ int get_param(int argc, char **argv)
             param->enclose_len = convert_option(argv[i] + 8,
                                                 param->enclose,
                                                 MIN(strlen(argv[i]) - 8, 15));
-            printf("Param->enclose: %s\n", param->enclose);                                    
+            printf("Param->enclose: %s\n", param->enclose);
         }
 
         // new options
@@ -1642,20 +1658,19 @@ int get_param(int argc, char **argv)
         {
             memset(param->nullchar, 0, 16);
             param->nullchar_len = convert_option(argv[i] + 5,
-                                                param->nullchar,
-                                                MIN(strlen(argv[i]) - 5, 15));
-            printf("Param->null: %s\n", param->nullchar);                                    
+                                                 param->nullchar,
+                                                 MIN(strlen(argv[i]) - 5, 15));
+            printf("Param->null: %s\n", param->nullchar);
         }
-        
+
         else if (STRNCASECMP("escape=", argv[i], 7) == 0)
         {
             memset(param->escape, 0, 16);
             param->escape_len = convert_option(argv[i] + 7,
-                                                param->escape,
-                                                MIN(strlen(argv[i]) - 7, 15));
-            printf("Param->escape: %s\n", param->escape);                                    
+                                               param->escape,
+                                               MIN(strlen(argv[i]) - 7, 15));
+            printf("Param->escape: %s\n", param->escape);
         }
-
 
         // not usually used
         else if (STRNCASECMP("log=", argv[i], 4) == 0)
@@ -1666,7 +1681,7 @@ int get_param(int argc, char **argv)
         else if (STRNCASECMP("table=", argv[i], 6) == 0)
         {
             memcpy(param->tabname, argv[i] + 6, MIN(strlen(argv[i]) - 6, 127));
-            printf("Param->table: %s\n", param->tabname);            
+            printf("Param->table: %s\n", param->tabname);
         }
         else if (STRNCASECMP("mode=", argv[i], 5) == 0)
         {
@@ -1681,7 +1696,7 @@ int get_param(int argc, char **argv)
                 STRNCASECMP(tempbuf, "ON", 3) == 0 ||
                 STRNCASECMP(tempbuf, "1", 3) == 0)
                 param->header = 1;
-            printf("Param->head: %s\n", param->header);           
+            printf("Param->head: %s\n", param->header);
         }
         else if (STRNCASECMP("sort=", argv[i], 5) == 0)
         {
@@ -1689,7 +1704,7 @@ int get_param(int argc, char **argv)
             memcpy(tempbuf, argv[i] + 5, MIN(strlen(argv[i]) - 5, 254));
             param->ssize = atoi(tempbuf);
             if (param->ssize > 512)
-                param->ssize = 512;           
+                param->ssize = 512;
         }
         else if (STRNCASECMP("buffer=", argv[i], 7) == 0)
         {
@@ -1853,4 +1868,53 @@ int get_param(int argc, char **argv)
                param->enclose_len);
 
     return 0;
+}
+
+/* ----------------------------------------------------------------- */
+/* check escape character                                            */
+/* ----------------------------------------------------------------- */
+ub1 check_escape(const ub1 ch)
+{
+    switch (ch)
+    {
+    case '\a':
+        return 'a';
+        break;
+    case '\b':
+        return 'b';
+        break;
+    case '\f':
+        return 'f';
+        break;
+    case '\n':
+        return 'n';
+        break;
+    case '\r':
+        return 'r';
+        break;
+    case '\t':
+        return 't';
+        break;
+    case '\v':
+        return 'v';
+        break;
+    case '\\':
+    case '\'':
+    case '\"':
+        return ch;
+        break;
+    default:
+        return 0;
+    }
+    return 0;
+}
+/* ----------------------------------------------------------------- */
+/* check null character                                              */
+/* ----------------------------------------------------------------- */
+ub1 check_null(const ub1 ch)
+{
+    if (ch == '\0')
+        return 1;
+    else
+        return 0;
 }
