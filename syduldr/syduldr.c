@@ -5,6 +5,8 @@
 * change history:
 * 2017-08-14 Create project.        version 0.1
 * 2017-08-15 Kill the firt bug.     version 0.2
+* 2017-08-17 Add two options: null and escape
+*         (escape need more tests)   version 0.3
 */
 
 /* oratypes.h

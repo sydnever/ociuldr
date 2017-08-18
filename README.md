@@ -8,19 +8,11 @@ ociuldr/syduldr
 
 ociuldr.c在oracle11的环境下运行时错误，tbuldr.c报了一个sql执行的错误，现在以tbuldr为基础进行修改，命名为syduldr。
 
----
+* 2017-08-14 Create project.        version 0.1
+* 2017-08-15 Kill the firt bug.     version 0.2
+* 2017-08-17 Add two options: null and escape(escape need more tests)   version 0.3
 
-### 待测试参数选项
-
-field 列间隔符
-
-enclose 将列内容封包的符号
-
-### 待增加参数选项
-
-escape 转义符（默认值\\)
-
-null NULL符（默认为转义符N） 
+escape选项的代码能够处理标准形式的C语言字符串，但是在oracle下的表现令我困惑，我还需要更多的测试来确定这个功能是否完成。
 
 ----
 ## 目录结构
