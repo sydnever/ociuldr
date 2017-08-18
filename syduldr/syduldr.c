@@ -948,7 +948,12 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
 
     start_time = time(0);
 
-    char temp_null[8196];
+    ub1 temp_col[8196];
+    ub1 temp_escape[8196];
+    int tc = 0;
+    int te = 0;
+    int pe = 0;
+    ub1 chk_escape;
 
     // count columns
     p = col->next;
@@ -1045,6 +1050,9 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                             cols[c]->colname);
                 }
                 // output
+                memset(temp_col, 0, 8196);
+                strcpy(temp_col, cols[c]->colbuf + (r * cols[c]->colwidth));
+                //printf("old: %s\n", temp_col);
                 if (*(cols[c]->p_indv + r) >= 0)
                 {
                     if (cols[c]->coltype == SQLT_LBI ||
@@ -1071,11 +1079,30 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                             // Todo: check null and escape
                             if (param->escape_len)
                             {
-                                //
+                                //printf("######\n");
+                                for (tc = 0, te = 0; tc < strlen(temp_col); tc++, te++)
+                                {
+                                    chk_escape = check_escape(temp_col[tc]);
+                                    if (chk_escape)
+                                    {
+                                        for (pe = 0; pe < strlen(param->escape); pe++)
+                                        {
+                                            temp_escape[te] = param->escape[pe];
+                                            te++;
+                                        }
+                                        temp_escape[te] = chk_escape;
+                                    }
+                                    else
+                                    {
+                                        temp_escape[te] = temp_col[tc];
+                                    }
+                                }
+                                strcpy(temp_col, temp_escape);
+                                memset(temp_escape, 0, 8196);
                             }
-
-                            fwrite(cols[c]->colbuf + (r * cols[c]->colwidth),
-                                   *(cols[c]->col_retlen + r),
+                            //printf("new: %s\n\n", temp_col);
+                            fwrite(temp_col,
+                                   strlen(temp_col),
                                    1,
                                    (fp == NULL ? stdout : fp));
                         }
@@ -1084,11 +1111,10 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                 // null enter here directly
                 if (param->nullchar_len)
                 {
-                    strcpy(temp_null,
-                           cols[c]->colbuf + (r * cols[c]->colwidth));
-                    if (!strlen(temp_null))
+
+                    if (!strlen(temp_col))
                     {
-                        fwrite(&param->nullchar,
+                        fwrite(param->nullchar,
                                param->nullchar_len,
                                1,
                                (fp == NULL ? stdout : fp));

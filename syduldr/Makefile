@@ -5,7 +5,7 @@ syduldr: syduldr.c
 	-I${ORACLE_HOME}/rdbms/public \
 	-I${ORACLE_HOME}/rdbms/demo \
 	-L${ORACLE_HOME}/lib \
-	-lclntsh -g -Wall \
+	-lclntsh -g \
 	-o syduldr syduldr.c
 
 clean:
