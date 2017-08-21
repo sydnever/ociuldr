@@ -42,30 +42,40 @@ make
 ```
 
 ---
-
+    ----------------------------------------------------------------------------
+    - syduldr: Release 0.3 (ociuldr)
+    - First issued by Lou Fangxin (@) Copyright 2004/2008, all rights reserved.
+    - Modified by Syd [https://github.com/sydnever].
+    ----------------------------------------------------------------------------
     Usage: SYDULDR keyword=value [,keyword=value,...]
-     Valid Keywords:
-           user     = username/password@tnsname
-           query    = select statement, can simply speicify a table name
-           sql      = SQL file name
-           field    = seperator string between fields
-           record   = seperator string between records
-           enclose  = fields enclose string
-           file     = output file name, default: uldrdata.txt
-           head     = print row header(Yes|No,ON|OFF,1|0)
-           read     = set DB_FILE_MULTIBLOCK_READ_COUNT at session level
-           sort     = set SORT_AREA_SIZE at session level (UNIT:MB) 
-           hash     = set HASH_AREA_SIZE at session level (UNIT:MB) 
-           serial   = set _serial_direct_read to TRUE if 1 at session level
-           trace    = set event 10046 to given level at session level
-           table    = table name in the sqlldr control file
-           mode     = sqlldr option, INSERT or APPEND or REPLACE or TRUNCATE 
-           log      = log file name, prefix with + to append mode
-           long     = maximum long field size, default 8192 max 65534
-           array    = array fetch size, default 50
-           buffer   = sqlldr READSIZE and BINDSIZE, default 16 (MB)
-           feedback = display progress every x rows, default 500000
-           form     = display rows as form (Yes|No)
-           fixlen   = fix length format (Yes|No)
+    Valid Keywords:
+        user     = username/password@tnsname
+        query    = select statement, can simply speicify a table name
+        sql      = SQL file name
+        field    = seperator string between fields
+        record   = seperator string between records
+        enclose  = fields enclose string
+        escape   = escape character for special characters 
+        null     = replace null with given value 
+        file     = output file name, default: uldrdata.txt
+        head     = print row header(Yes|No,ON|OFF,1|0)
+        read     = set DB_FILE_MULTIBLOCK_READ_COUNT at session level
+        sort     = set SORT_AREA_SIZE at session level (UNIT:MB) 
+        hash     = set HASH_AREA_SIZE at session level (UNIT:MB) 
+        serial   = set _serial_direct_read to TRUE if 1 at session level
+        trace    = set event 10046 to given level at session level
+        table    = table name in the sqlldr control file
+        mode     = sqlldr option, INSERT or APPEND or REPLACE or TRUNCATE 
+        log      = log file name, prefix with + to append mode
+        long     = maximum long field size, default 8192 max 65534
+        array    = array fetch size, default 50
+        buffer   = sqlldr READSIZE and BINDSIZE, default 16 (MB)
+        feedback = display progress every x rows, default 500000
+        form     = display rows as form (Yes|No)
+        fixlen   = fix length format (Yes|No)
+
+    for field, record and enclose, use '0x' to specify hex character code
+    \r=0x0d \n=0x0a |=0x7c ,=0x2c \t=0x09  (more: man ascii)
+
 
 ---

@@ -82,7 +82,7 @@ typedef void (*lgenfp_t)( void )
 
 /* constants */
 #define MAJOR_VERSION_NUMBER 0
-#define MINOR_VERSION_NUMBER 2
+#define MINOR_VERSION_NUMBER 3
 #define MAX_SELECT_LIST_SIZE 1024
 #define MAX_COLNAME_BUFFER_SIZE 32
 #define MAX_CLOB_SIZE 65534
@@ -553,7 +553,6 @@ void print_help()
     printf("       field    = seperator string between fields\n");
     printf("       record   = seperator string between records\n");
     printf("       enclose  = fields enclose string\n");
-    printf("       escape   = escape character for special characters \n");
     printf("       null     = replace null with given value \n");
     printf("       file     = output file name, default: uldrdata.txt\n");
     printf("       head     = print row header(Yes|No,ON|OFF,1|0)\n");
@@ -795,6 +794,7 @@ sword get_columns(OCIStmt *p_stmt, struct COLUMN *collist)
         nextcol->next = tempcol;
         nextcol = tempcol;
 
+        // set colwidth
         switch (nextcol->coltype)
         {
         case SQLT_DATE:
@@ -855,12 +855,12 @@ sword get_columns(OCIStmt *p_stmt, struct COLUMN *collist)
         nextcol->colbuf = malloc((int)param->asize * nextcol->colwidth);
         memset(nextcol->colbuf, 0, ((int)param->asize * nextcol->colwidth));
 
-        if (param->debug)
-            printf("%10d bytes allocated for column %s (%d) type %d\n",
-                   nextcol->colwidth * param->asize,
-                   nextcol->colname,
-                   nextcol->colwidth - 1,
-                   nextcol->coltype);
+        //if (param->debug)
+        printf("%10d bytes allocated for column %s (%d) type %d\n",
+               nextcol->colwidth * param->asize,
+               nextcol->colname,
+               nextcol->colwidth - 1,
+               nextcol->coltype);
 
         //define output
         if (nextcol->coltype == SQLT_BLOB || nextcol->coltype == SQLT_LBI)
@@ -1048,7 +1048,8 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                 if (param->isForm)
                 {
                     fprintf((fp == NULL ? stdout : fp),
-                            "%-31s: ",
+                            //"%-31s: ",
+                            "%s: ",
                             cols[c]->colname);
                 }
                 // output
@@ -1619,6 +1620,10 @@ int get_param(int argc, char **argv)
     param->asize = 50;
     param->lsize = 8192;
 
+    text tmp_record[32];
+    int tr;
+    int pr;
+
     /*
     The strcasecmp() function compares the two strings s1 and s2, 
     ignoring the case of the characters. 
@@ -1657,7 +1662,7 @@ int get_param(int argc, char **argv)
         }
         else if (STRNCASECMP("field=", argv[i], 6) == 0)
         {
-            memset(param->field, 0, 16);
+            memset(param->field, 0, 32);
             param->field_len = convert_option(argv[i] + 6,
                                               param->field,
                                               MIN(strlen(argv[i]) - 6, 15));
@@ -1665,16 +1670,35 @@ int get_param(int argc, char **argv)
         }
         else if (STRNCASECMP("record=", argv[i], 7) == 0)
         {
-            memset(param->record, 0, 16);
+            memset(param->record, 0, 32);
             param->return_len = convert_option(argv[i] + 7,
                                                param->record,
                                                MIN(strlen(argv[i]) - 7, 15));
-            printf("Param->record: %s\n", param->record);
+            printf("Param->record(raw): %s\n", param->record);
+            memset(tmp_record, 0, 32);
+            // check '\n'
+            for (pr = 0, tr = 0; pr < param->return_len - 1; pr++, tr++)
+            {
+                if (param->record[pr] == '\\' && param->record[pr + 1] == 'n')
+                {
+                    tmp_record[tr] = '\n';
+                    pr++;
+                }
+                else
+                    tmp_record[tr] = param->record[pr];
+            }
+            if (!(param->record[param->return_len - 2] == '\\' &&
+                  param->record[param->return_len - 1] == 'n'))
+                tmp_record[strlen(tmp_record)] = param->record[param->return_len];
+            param->return_len = strlen(tmp_record);
+            memset(param->record, 0, strlen(param->record));
+            strcpy(param->record, tmp_record);         
+            printf("Param->record(cooked): %s\n", param->record);
         }
 
         else if (STRNCASECMP("enclose=", argv[i], 8) == 0)
         { // there may be something wrong
-            memset(param->enclose, 0, 16);
+            memset(param->enclose, 0, 32);
             param->enclose_len = convert_option(argv[i] + 8,
                                                 param->enclose,
                                                 MIN(strlen(argv[i]) - 8, 15));
@@ -1684,7 +1708,7 @@ int get_param(int argc, char **argv)
         // new options
         else if (STRNCASECMP("null=", argv[i], 5) == 0)
         {
-            memset(param->nullchar, 0, 16);
+            memset(param->nullchar, 0, 32);
             param->nullchar_len = convert_option(argv[i] + 5,
                                                  param->nullchar,
                                                  MIN(strlen(argv[i]) - 5, 15));
@@ -1693,7 +1717,7 @@ int get_param(int argc, char **argv)
 
         else if (STRNCASECMP("escape=", argv[i], 7) == 0)
         {
-            memset(param->escape, 0, 16);
+            memset(param->escape, 0, 32);
             param->escape_len = convert_option(argv[i] + 7,
                                                param->escape,
                                                MIN(strlen(argv[i]) - 7, 15));
@@ -1888,12 +1912,12 @@ int get_param(int argc, char **argv)
     if (param->isForm)
         param->header = 0;
 
-    if (param->debug)
-        printf("\narray:%d field_len:%d return_len:%d enclose_len:%d\n",
-               param->asize,
-               param->field_len,
-               param->return_len,
-               param->enclose_len);
+    //if (param->debug)
+    printf("\narray:%d field_len:%d return_len:%d enclose_len:%d\n",
+           param->asize,
+           param->field_len,
+           param->return_len,
+           param->enclose_len);
 
     return 0;
 }
