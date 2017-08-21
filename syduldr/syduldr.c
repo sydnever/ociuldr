@@ -1724,7 +1724,7 @@ int get_param(int argc, char **argv)
                 STRNCASECMP(tempbuf, "ON", 3) == 0 ||
                 STRNCASECMP(tempbuf, "1", 3) == 0)
                 param->header = 1;
-            printf("Param->head: %s\n", param->header);
+            printf("Param->head: %d\n", param->header);
         }
         else if (STRNCASECMP("sort=", argv[i], 5) == 0)
         {
