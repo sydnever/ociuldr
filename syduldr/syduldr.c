@@ -1663,6 +1663,7 @@ int get_param(int argc, char **argv)
             param->field_len = convert_option(argv[i] + 6,
                                               param->field,
                                               MIN(strlen(argv[i]) - 6, 15));
+            param->field_len = escape_return_and_tab(param->field, param->field_len);
             printf("Param->field: %s\n", param->field);
         }
         else if (STRNCASECMP("record=", argv[i], 7) == 0)
@@ -1671,10 +1672,9 @@ int get_param(int argc, char **argv)
             param->return_len = convert_option(argv[i] + 7,
                                                param->record,
                                                MIN(strlen(argv[i]) - 7, 15));
-            printf("Param->record(raw): %s\n", param->record);
             // check '\n' '\t'
             param->return_len = escape_return_and_tab(param->record, param->return_len);
-            printf("Param->record(cooked): %s\n", param->record);
+            printf("Param->record: %s\n", param->record);
         }
 
         else if (STRNCASECMP("enclose=", argv[i], 8) == 0)
@@ -1683,6 +1683,7 @@ int get_param(int argc, char **argv)
             param->enclose_len = convert_option(argv[i] + 8,
                                                 param->enclose,
                                                 MIN(strlen(argv[i]) - 8, 15));
+            param->enclose_len = escape_return_and_tab(param->enclose, param->enclose_len);
             printf("Param->enclose: %s\n", param->enclose);
         }
 
@@ -1952,6 +1953,9 @@ ub1 check_null(const ub1 ch)
         return 0;
 }
 
+/* ----------------------------------------------------------------- */
+/* escape \n and \t                                                  */
+/* ----------------------------------------------------------------- */
 ub1 escape_return_and_tab(ub1 *param, ub1 param_len)
 {
     ub1 tmp[32];
@@ -1981,5 +1985,5 @@ ub1 escape_return_and_tab(ub1 *param, ub1 param_len)
             tmp[strlen(tmp)] = param[param_len - 1];
     memset(param, 0, strlen(param));
     strcpy(param, tmp);
-    return strlen(tmp);
+    return strlen(param);
 }
