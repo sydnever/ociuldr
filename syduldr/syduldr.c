@@ -204,10 +204,11 @@ ub1 get_hexindex(char c);
 
 FILE *open_file(const text *fname, text tempbuf[], int batch);
 
-// todo
 // check escape & null
 ub1 check_escape(const ub1 ch);
 ub1 check_null(const ub1 ch);
+
+ub1 escape_return_and_tab(ub1 *param, ub1 param_len);
 
 int main(int argc, char *argv[])
 {
@@ -1602,7 +1603,7 @@ int get_param(int argc, char **argv)
     //there are some bugs.
     text tempbuf[1024];
     text temptable[1024];
-    FILE *fp_sql;
+    FILE *fp_sql = NULL;
     sword i;
 
     param = (struct PARAM *)malloc(sizeof(struct PARAM));
@@ -1619,10 +1620,6 @@ int get_param(int argc, char **argv)
     param->feedback = 500000;
     param->asize = 50;
     param->lsize = 8192;
-
-    text tmp_record[32];
-    int tr;
-    int pr;
 
     /*
     The strcasecmp() function compares the two strings s1 and s2, 
@@ -1675,24 +1672,8 @@ int get_param(int argc, char **argv)
                                                param->record,
                                                MIN(strlen(argv[i]) - 7, 15));
             printf("Param->record(raw): %s\n", param->record);
-            memset(tmp_record, 0, 32);
-            // check '\n'
-            for (pr = 0, tr = 0; pr < param->return_len - 1; pr++, tr++)
-            {
-                if (param->record[pr] == '\\' && param->record[pr + 1] == 'n')
-                {
-                    tmp_record[tr] = '\n';
-                    pr++;
-                }
-                else
-                    tmp_record[tr] = param->record[pr];
-            }
-            if (!(param->record[param->return_len - 2] == '\\' &&
-                  param->record[param->return_len - 1] == 'n'))
-                tmp_record[strlen(tmp_record)] = param->record[param->return_len];
-            param->return_len = strlen(tmp_record);
-            memset(param->record, 0, strlen(param->record));
-            strcpy(param->record, tmp_record);         
+            // check '\n' '\t'
+            param->return_len = escape_return_and_tab(param->record, param->return_len);
             printf("Param->record(cooked): %s\n", param->record);
         }
 
@@ -1969,4 +1950,36 @@ ub1 check_null(const ub1 ch)
         return 1;
     else
         return 0;
+}
+
+ub1 escape_return_and_tab(ub1 *param, ub1 param_len)
+{
+    ub1 tmp[32];
+    memset(tmp, 0, 32);
+    int pr;
+    int tr;
+    // check '\n' '\t'
+    for (pr = 0, tr = 0; pr < param_len - 1; pr++, tr++)
+    {
+        if (param[pr] == '\\' && param[pr + 1] == 'n')
+        {
+            tmp[tr] = '\n';
+            pr++;
+        }
+        else if (param[pr] == '\\' && param[pr + 1] == 't')
+        {
+            tmp[tr] = '\t';
+            pr++;
+        }
+        else
+            tmp[tr] = param[pr];
+    }
+    if (!(param[param_len - 2] == '\\' &&
+          param[param_len - 1] == 'n'))
+        if (!(param[param_len - 2] == '\\' &&
+              param[param_len - 1] == 't'))
+            tmp[strlen(tmp)] = param[param_len - 1];
+    memset(param, 0, strlen(param));
+    strcpy(param, tmp);
+    return strlen(tmp);
 }
