@@ -134,8 +134,8 @@ struct PARAM
     text field[32];
     text record[32];
     text enclose[32];
-    text escape[32];   // todo
-    text nullchar[32]; // todo
+    text escape[32];   
+    text nullchar[32]; 
     text connstr[132];
     text fname[128];
     text sqlfname[128];
@@ -146,8 +146,8 @@ struct PARAM
     ub1 field_len;    // field length
     ub1 return_len;   // return length
     ub1 enclose_len;  // enclose length
-    ub1 escape_len;   // todo
-    ub1 nullchar_len; // todo
+    ub1 escape_len;   
+    ub1 nullchar_len; 
     ub4 buffer;       // buffer size,default 16MB
     ub2 hsize;        // hash_area_size
     ub2 ssize;        // sort_area_size
@@ -207,7 +207,7 @@ FILE *open_file(const text *fname, text tempbuf[], int batch);
 // check escape & null
 ub1 check_escape(const ub1 ch);
 ub1 check_null(const ub1 ch);
-
+// escape \t and \n
 ub1 escape_return_and_tab(ub1 *param, ub1 param_len);
 
 int main(int argc, char *argv[])
@@ -220,7 +220,6 @@ int main(int argc, char *argv[])
     // get param
     if (get_param(argc, argv))
     {
-        printf("Error: No params. \n");
         free(p_user);
         free(p_pass);
         free(p_host);
@@ -259,11 +258,6 @@ int main(int argc, char *argv[])
 
     // sql prepare & execute
 
-    // printf("*************************************\n");
-    // printf("DEBUG:sql---select * from user_tables\n");
-    // printf("*************************************\n");
-    // if (sql_prepare(p_stmt, "select * from user_tables") == 0)
-    printf("Log: Query---%s\n", param->query);
     if (sql_prepare(p_stmt, param->query) == 0)
     {
         printf("Log: Sql prepared. \n");
@@ -1035,7 +1029,6 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
         }
 
         // output
-        // Todo: check null and escape
         for (r = 0; r < rows; r++)
         {
             for (c = 0; c < colcount; c++)
@@ -1696,7 +1689,7 @@ int get_param(int argc, char **argv)
                                                  MIN(strlen(argv[i]) - 5, 15));
             printf("Param->null: %s\n", param->nullchar);
         }
-
+        // don't suggest to use it
         else if (STRNCASECMP("escape=", argv[i], 7) == 0)
         {
             memset(param->escape, 0, 32);
@@ -1895,7 +1888,7 @@ int get_param(int argc, char **argv)
         param->header = 0;
 
     //if (param->debug)
-    printf("\narray:%d field_len:%d return_len:%d enclose_len:%d\n",
+    printf("Log: array:%d field_len:%d return_len:%d enclose_len:%d\n",
            param->asize,
            param->field_len,
            param->return_len,
