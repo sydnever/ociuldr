@@ -82,7 +82,7 @@ typedef void (*lgenfp_t)( void )
 
 /* constants */
 #define MAJOR_VERSION_NUMBER 0
-#define MINOR_VERSION_NUMBER 3
+#define MINOR_VERSION_NUMBER 4
 #define MAX_SELECT_LIST_SIZE 1024
 #define MAX_COLNAME_BUFFER_SIZE 32
 #define MAX_CLOB_SIZE 65534

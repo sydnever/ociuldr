@@ -11,6 +11,7 @@ ociuldr.c在oracle11的环境下运行时错误，tbuldr.c报了一个sql执行�
 * 2017-08-14 Create project.        version 0.1
 * 2017-08-15 Kill the firt bug.     version 0.2
 * 2017-08-17 Add two options: null and escape(escape need more tests)   version 0.3
+* 2017-08-24 Final version          version 0.4
 
 escape选项的代码能够处理标准形式的C语言字符串，但是在oracle下的表现令我困惑，我还需要更多的测试来确定这个功能是否完成。
 
