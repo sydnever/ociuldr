@@ -134,8 +134,8 @@ struct PARAM
     text field[32];
     text record[32];
     text enclose[32];
-    text escape[32];   
-    text nullchar[32]; 
+    text escape[32];
+    text nullchar[32];
     text connstr[132];
     text fname[128];
     text sqlfname[128];
@@ -143,20 +143,20 @@ struct PARAM
     text tabname[128];
     text tabmode[16];
 
-    ub1 field_len;    // field length
-    ub1 return_len;   // return length
-    ub1 enclose_len;  // enclose length
-    ub1 escape_len;   
-    ub1 nullchar_len; 
-    ub4 buffer;       // buffer size,default 16MB
-    ub2 hsize;        // hash_area_size
-    ub2 ssize;        // sort_area_size
-    ub2 bsize;        // db_file_multiblock_read_count
-    ub1 serial;       // _serial_direct_read
-    ub1 trace;        // 10046 trace level
-    ub2 batch;        // batch out files
-    ub1 header;       // output header line
-    ub4 feedback;     // display progress log every x rows
+    ub1 field_len;   // field length
+    ub1 return_len;  // return length
+    ub1 enclose_len; // enclose length
+    ub1 escape_len;
+    ub1 nullchar_len;
+    ub4 buffer;   // buffer size,default 16MB
+    ub2 hsize;    // hash_area_size
+    ub2 ssize;    // sort_area_size
+    ub2 bsize;    // db_file_multiblock_read_count
+    ub1 serial;   // _serial_direct_read
+    ub1 trace;    // 10046 trace level
+    ub2 batch;    // batch out files
+    ub1 header;   // output header line
+    ub4 feedback; // display progress log every x rows
 
     ub4 asize; // array size
     ub4 lsize; // long size
@@ -227,10 +227,10 @@ int main(int argc, char *argv[])
     }
     printf("Log: Get params. \n");
 
-    // get user/password@host
+    // get user/password@tnsname
     if (strlen(param->connstr))
     {
-        printf("Log: Get user/password@host. \n");
+        printf("Log: Get user/password@tnsname. \n");
         decode_connstr(p_user, p_pass, p_host);
     }
     else
@@ -1033,12 +1033,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
         {
             for (c = 0; c < colcount; c++)
             {
-                // enclose
-                if (param->enclose_len)
-                    fwrite(param->enclose,
-                           param->enclose_len,
-                           1,
-                           (fp == NULL ? stdout : fp));
+
                 if (param->isForm)
                 {
                     fprintf((fp == NULL ? stdout : fp),
@@ -1052,6 +1047,12 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                 //printf("old: %s\n", temp_col);
                 if (*(cols[c]->p_indv + r) >= 0)
                 {
+                    // enclose
+                    if (param->enclose_len)
+                        fwrite(param->enclose,
+                               param->enclose_len,
+                               1,
+                               (fp == NULL ? stdout : fp));
                     if (cols[c]->coltype == SQLT_LBI ||
                         cols[c]->coltype == SQLT_BLOB) //long binary type
                     {
@@ -1104,6 +1105,12 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                                    (fp == NULL ? stdout : fp));
                         }
                     }
+                    // enclose
+                    if (param->enclose_len)
+                        fwrite(param->enclose,
+                               param->enclose_len,
+                               1,
+                               (fp == NULL ? stdout : fp));
                 }
                 // null enter here directly
                 if (param->nullchar_len)
@@ -1117,12 +1124,7 @@ void print_row(OCISvcCtx *p_svc, OCIStmt *p_stmt, struct COLUMN *col)
                                (fp == NULL ? stdout : fp));
                     }
                 }
-                // enclose
-                if (param->enclose_len)
-                    fwrite(param->enclose,
-                           param->enclose_len,
-                           1,
-                           (fp == NULL ? stdout : fp));
+
                 // field
                 if (param->isForm)
                 {
@@ -1676,6 +1678,15 @@ int get_param(int argc, char **argv)
             param->enclose_len = convert_option(argv[i] + 8,
                                                 param->enclose,
                                                 MIN(strlen(argv[i]) - 8, 15));
+            param->enclose_len = escape_return_and_tab(param->enclose, param->enclose_len);
+            printf("Param->enclose: %s\n", param->enclose);
+        }
+        else if (STRNCASECMP("quote=", argv[i], 6) == 0)
+        { // there may be something wrong
+            memset(param->enclose, 0, 32);
+            param->enclose_len = convert_option(argv[i] + 6,
+                                                param->enclose,
+                                                MIN(strlen(argv[i]) - 6, 15));
             param->enclose_len = escape_return_and_tab(param->enclose, param->enclose_len);
             printf("Param->enclose: %s\n", param->enclose);
         }
